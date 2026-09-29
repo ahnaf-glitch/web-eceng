@@ -34,6 +34,8 @@ class PortalController extends Controller
     {
         $attributes = $request->validate([
             'location' => ['required', 'string', 'max:255'],
+            'latitude' => ['required', 'numeric', 'between:-7.7,-7.18'],
+            'longitude' => ['required', 'numeric', 'between:112.45,113.15'],
             'density' => ['required', 'in:ringan,sedang,parah'],
             'description' => ['required', 'string', 'max:2000'],
             'photo' => ['nullable', 'image', 'max:5120'],
@@ -43,6 +45,8 @@ class PortalController extends Controller
             $report = Report::create([
                 'user_id' => $request->user()->id,
                 'location' => $attributes['location'],
+                'latitude' => $attributes['latitude'],
+                'longitude' => $attributes['longitude'],
                 'density' => $attributes['density'],
                 'description' => $attributes['description'],
                 'photo_path' => $request->file('photo')?->store('reports', 'public'),
@@ -56,12 +60,30 @@ class PortalController extends Controller
 
     public function reports(Request $request): View
     {
-        $reports = Report::with('user')->latest()
+        $filteredReports = Report::query()
             ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
-            ->when($request->query('density'), fn ($query, $density) => $query->where('density', $density))
-            ->paginate(10)->withQueryString();
+            ->when($request->query('density'), fn ($query, $density) => $query->where('density', $density));
 
-        return view('portal.index', ['page' => 'reports', 'reports' => $reports]);
+        $mapReports = (clone $filteredReports)
+            ->with('user:id,name')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->latest()
+            ->get(['id', 'user_id', 'location', 'latitude', 'longitude', 'density', 'status', 'created_at'])
+            ->map(fn (Report $report): array => [
+                'id' => $report->id,
+                'location' => $report->location,
+                'latitude' => (float) $report->latitude,
+                'longitude' => (float) $report->longitude,
+                'density' => $report->density,
+                'status' => $report->status,
+                'reporter' => $report->user->name,
+                'created_at' => $report->created_at->translatedFormat('d M Y'),
+            ])->values();
+
+        $reports = (clone $filteredReports)->with('user')->latest()->paginate(10)->withQueryString();
+
+        return view('portal.index', ['page' => 'reports', 'reports' => $reports, 'mapReports' => $mapReports]);
     }
 
     public function workdays(): View
@@ -84,6 +106,7 @@ class PortalController extends Controller
     {
         $attributes = $request->validate([
             'reward' => ['required', 'in:pulsa,token listrik,e-wallet'],
+            'provider' => ['required_if:reward,e-wallet', 'nullable', 'in:dana,gopay,ovo,shopeepay'],
             'points' => ['required', 'integer', 'min:10', 'multiple_of:10'],
             'destination' => ['required', 'string', 'max:100'],
         ]);
@@ -93,7 +116,11 @@ class PortalController extends Controller
             abort_if($user->points < $attributes['points'], 422, 'Saldo poin tidak mencukupi.');
 
             $user->decrement('points', $attributes['points']);
-            Redemption::create([...$attributes, 'user_id' => $user->id]);
+            Redemption::create([
+                ...$attributes,
+                'provider' => $attributes['reward'] === 'e-wallet' ? $attributes['provider'] : null,
+                'user_id' => $user->id,
+            ]);
         });
 
         return back()->with('success', 'Permintaan penukaran berhasil dicatat dan menunggu diproses.');

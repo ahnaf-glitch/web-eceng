@@ -33,4 +33,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::patch('/laporan/{report}', [AdminController::class, 'updateReport'])->name('reports.update');
     Route::post('/kerja-bakti', [AdminController::class, 'storeWorkday'])->name('workdays.store');
+    Route::get('/warga-peduli', [AdminController::class, 'redemptions'])->name('redemptions.index');
+    Route::patch('/warga-peduli/{redemption}', [AdminController::class, 'updateRedemption'])->name('redemptions.update');
 });

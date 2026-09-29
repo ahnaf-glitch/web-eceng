@@ -9,6 +9,21 @@
     default => 'Edukasi',
 })
 
+@if(in_array($page, ['report-form', 'reports'], true))
+    @push('styles')
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    @endpush
+    @push('scripts')
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script src="{{ asset('js/reports-map.js') }}" defer></script>
+    @endpush
+@endif
+@if($page === 'rewards')
+    @push('scripts')
+        <script src="{{ asset('js/rewards.js') }}" defer></script>
+    @endpush
+@endif
+
 @section('content')
     @if($page === 'dashboard')
         <section class="dashboard-hero">
@@ -52,6 +67,7 @@
                 @csrf
                 <div class="form-grid">
                     <div class="field field-full"><label for="location">Lokasi sungai</label><input id="location" name="location" value="{{ old('location') }}" placeholder="Contoh: Kali Cempaka, dekat jembatan RT 02" required></div>
+                    <div class="field field-full"><label>Titik eceng gondok di peta Sidoarjo</label><div id="report-map" class="report-map" data-map-mode="pick" aria-label="Peta untuk menentukan titik laporan"></div><input id="latitude" name="latitude" type="hidden" value="{{ old('latitude') }}"><input id="longitude" name="longitude" type="hidden" value="{{ old('longitude') }}"><span id="map-selection" class="field-help" aria-live="polite">Pilih titik pada peta agar pengurus dapat menemukan lokasi secara akurat.</span></div>
                     <div class="field field-full"><label for="density">Tingkat kepadatan eceng gondok</label><select id="density" name="density" required><option value="">Pilih tingkat kepadatan</option><option value="ringan" @selected(old('density') === 'ringan')>Ringan · tumbuh tersebar</option><option value="sedang" @selected(old('density') === 'sedang')>Sedang · menutup sebagian aliran</option><option value="parah" @selected(old('density') === 'parah')>Parah · menutup sebagian besar aliran</option></select></div>
                     <div class="field field-full"><label for="description">Keterangan laporan</label><textarea id="description" name="description" maxlength="2000" placeholder="Ceritakan kondisi yang terlihat, patokan lokasi, atau hal yang perlu diperhatikan." required>{{ old('description') }}</textarea><span class="field-help">Maksimal 2.000 karakter. Jangan masuk ke sungai atau mengambil risiko saat mengambil foto.</span></div>
                     <div class="field field-full"><label for="photo">Foto kondisi (opsional)</label><input id="photo" type="file" name="photo" accept="image/*"><span class="field-help">Format gambar, maksimal 5 MB.</span></div>
@@ -67,6 +83,13 @@
             <div class="field"><label for="density-filter">Kepadatan</label><select id="density-filter" name="density"><option value="">Semua tingkat</option><option value="ringan" @selected(request('density') === 'ringan')>Ringan</option><option value="sedang" @selected(request('density') === 'sedang')>Sedang</option><option value="parah" @selected(request('density') === 'parah')>Parah</option></select></div>
             <button class="button button-secondary" type="submit">Terapkan filter</button><a class="button button-outline" href="{{ route('portal.reports.index') }}">Reset</a>
         </form>
+        <section class="map-section" aria-labelledby="report-map-title">
+            <div class="map-heading"><div><span class="eyebrow">PEMETAAN LAPORAN</span><h2 id="report-map-title">Titik eceng gondok di Sidoarjo</h2></div><span class="map-count">{{ $mapReports->count() }} titik pada peta</span></div>
+            <div id="reports-map" class="report-map report-map-board" data-map-mode="markers" aria-label="Peta titik laporan eceng gondok di Sidoarjo"></div>
+            <script id="map-report-data" type="application/json">@json($mapReports)</script>
+            <div class="map-legend" aria-label="Legenda tingkat kepadatan"><span><i style="background:#4d9862"></i>Ringan</span><span><i style="background:#d89c39"></i>Sedang</span><span><i style="background:#d95e4b"></i>Parah</span></div>
+            <p class="map-attribution">Peta © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Pin laporan lama tidak ditampilkan jika belum memiliki koordinat.</p>
+        </section>
         <div class="report-list">
             @forelse($reports as $report)
                 <article class="panel report-card">
@@ -101,8 +124,8 @@
         <div class="page-heading"><div><span class="eyebrow">APRESIASI UNTUK WARGA</span><h1>Warga peduli</h1><p>Kontribusi nyata mendapat apresiasi. Kumpulkan dan tukarkan poin kepedulianmu.</p></div></div>
         <section class="rewards-hero"><div><span class="eyebrow eyebrow-light">SALDO POIN SAYA</span><h2>{{ auth()->user()->points }} poin</h2><p>Setiap 10 poin bernilai Rp1.000.</p></div><div class="rupiah-note">Poin didapat dari laporan warga dan dapat ditukar menjadi pulsa, token listrik, atau saldo e-wallet.</div></section>
         <div class="reward-layout">
-            <form class="panel reward-form" action="{{ route('portal.redeem') }}" method="POST">@csrf<h2>Tukar poin</h2><div class="field"><label for="reward">Pilih hadiah</label><select id="reward" name="reward" required><option value="">Pilih bentuk penukaran</option><option value="pulsa">Pulsa</option><option value="token listrik">Token listrik</option><option value="e-wallet">E-wallet</option></select></div><div class="field" style="margin-top:13px"><label for="points">Jumlah poin</label><input id="points" type="number" name="points" min="10" step="10" value="{{ old('points', 10) }}" required><span class="field-help">Kelipatan 10 poin. 10 poin setara Rp1.000.</span></div><div class="field" style="margin-top:13px"><label for="destination">Nomor tujuan</label><input id="destination" name="destination" value="{{ old('destination') }}" placeholder="Nomor HP atau ID akun tujuan" required></div><button class="button button-primary" style="margin-top:17px" type="submit">Ajukan penukaran <span>→</span></button></form>
-            <section class="panel history-panel"><h2>Riwayat penukaran</h2>@forelse($redemptions as $redemption)<div class="history-row"><div><strong>{{ ucfirst($redemption->reward) }} · {{ $redemption->destination }}</strong><small>{{ $redemption->created_at->translatedFormat('d M Y') }} · {{ $redemption->points }} poin (Rp{{ number_format($redemption->points * 100, 0, ',', '.') }})</small></div><span class="status-pill status-{{ $redemption->status === 'menunggu' ? 'diproses' : 'selesai' }}">{{ ucfirst($redemption->status) }}</span></div>@empty<p class="empty-state">Belum ada penukaran poin.</p>@endforelse</section>
+            <form class="panel reward-form" action="{{ route('portal.redeem') }}" method="POST">@csrf<h2>Tukar poin</h2><div class="field"><label for="reward">Pilih hadiah</label><select id="reward" name="reward" required><option value="">Pilih bentuk penukaran</option><option value="pulsa" @selected(old('reward') === 'pulsa')>Pulsa</option><option value="token listrik" @selected(old('reward') === 'token listrik')>Token listrik</option><option value="e-wallet" @selected(old('reward') === 'e-wallet')>E-wallet</option></select></div><div class="field wallet-provider" id="wallet-provider-field" style="margin-top:13px" @if(old('reward') !== 'e-wallet') hidden @endif><label for="provider">Pilih e-wallet</label><select id="provider" name="provider" @if(old('reward') !== 'e-wallet') disabled @endif><option value="">Pilih penyedia e-wallet</option><option value="dana" @selected(old('provider') === 'dana')>DANA</option><option value="gopay" @selected(old('provider') === 'gopay')>GoPay</option><option value="ovo" @selected(old('provider') === 'ovo')>OVO</option><option value="shopeepay" @selected(old('provider') === 'shopeepay')>ShopeePay</option></select></div><div class="field" style="margin-top:13px"><label for="points">Jumlah poin</label><input id="points" type="number" name="points" min="10" step="10" value="{{ old('points', 10) }}" required><span class="field-help">Kelipatan 10 poin. 10 poin setara Rp1.000.</span></div><div class="field" style="margin-top:13px"><label for="destination">Nomor tujuan</label><input id="destination" name="destination" value="{{ old('destination') }}" placeholder="Nomor HP atau ID akun tujuan" required></div><button class="button button-primary" style="margin-top:17px" type="submit">Ajukan penukaran <span>→</span></button></form>
+            <section class="panel history-panel"><h2>Riwayat penukaran</h2>@forelse($redemptions as $redemption)<div class="history-row"><div><strong>{{ ucfirst($redemption->reward) }}@if($redemption->provider) · {{ ['dana' => 'DANA', 'gopay' => 'GoPay', 'ovo' => 'OVO', 'shopeepay' => 'ShopeePay'][$redemption->provider] ?? ucfirst($redemption->provider) }}@endif · {{ $redemption->destination }}</strong><small>{{ $redemption->created_at->translatedFormat('d M Y') }} · {{ $redemption->points }} poin (Rp{{ number_format($redemption->points * 100, 0, ',', '.') }})</small></div><span class="status-pill status-{{ $redemption->status === 'menunggu' ? 'diproses' : 'selesai' }}">{{ ucfirst($redemption->status) }}</span></div>@empty<p class="empty-state">Belum ada penukaran poin.</p>@endforelse</section>
         </div>
     @else
         <div class="page-heading"><div><span class="eyebrow">KENALI, CEGAH, OLAH</span><h1>Belajar tentang eceng gondok</h1><p>Kenali dampaknya dan pilihan penanganan yang bijak untuk ekosistem sungai.</p></div></div>

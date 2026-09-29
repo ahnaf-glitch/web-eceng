@@ -7,9 +7,11 @@ Portal warga untuk melaporkan eceng gondok, memantau penanganan, mengikuti kerja
 - Akun warga dengan nama, RT/RW, email, dan kata sandi.
 - Laporan lokasi, kepadatan eceng gondok, keterangan, serta foto opsional.
 - Papan laporan dengan filter status dan kepadatan.
+- Peta interaktif wilayah Sidoarjo dengan pin yang dipilih saat membuat laporan, warna kepadatan, dan tautan titik ke Google Maps.
 - Dashboard admin untuk memperbarui status laporan.
 - Jadwal kerja bakti yang dibuat admin dan dapat dilihat warga.
-- Poin warga: 10 poin per laporan, setara Rp1.000, dengan pencatatan permintaan penukaran pulsa, token listrik, dan e-wallet.
+- Poin warga: 10 poin per laporan, setara Rp1.000, dengan pencatatan permintaan penukaran pulsa, token listrik, dan e-wallet (DANA, GoPay, OVO, ShopeePay).
+- Admin dapat memfilter dan memproses penukaran poin; permintaan yang ditolak mengembalikan poin warga secara otomatis.
 - Halaman edukasi dampak, penanganan, dan pemanfaatan eceng gondok.
 
 ## Menjalankan lokal dengan XAMPP
@@ -31,6 +33,8 @@ Portal warga untuk melaporkan eceng gondok, memantau penanganan, mengikuti kerja
 6. Buka `http://127.0.0.1:8000`.
 
 Foto laporan disimpan pada disk publik Laravel. Permintaan penukaran poin dicatat dengan status menunggu untuk ditindaklanjuti pengelola.
+
+Peta menggunakan tile OpenStreetMap melalui Leaflet dan tidak memerlukan Google Maps API key. Titik laporan disimpan sebagai koordinat, dibatasi pada area peta Sidoarjo, dan dapat dibuka di Google Maps dari popup pin. Laporan lama tanpa koordinat tetap tampil pada daftar, tetapi belum memiliki pin peta.
 
 ## Tes
 

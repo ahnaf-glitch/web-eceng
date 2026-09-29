@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Redemption extends Model
 {
-    protected $fillable = ['user_id', 'reward', 'points', 'destination', 'status'];
+    protected $fillable = ['user_id', 'reward', 'provider', 'points', 'destination', 'status'];
 
     public function user(): BelongsTo
     {

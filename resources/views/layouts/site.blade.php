@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+    @stack('styles')
     <link href="{{ asset('css/site.css') }}" rel="stylesheet">
 </head>
 <body class="app-shell">
@@ -21,6 +22,7 @@
                 <a class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Ringkasan</a>
                 <a class="{{ request()->routeIs('portal.reports.index') ? 'active' : '' }}" href="{{ route('portal.reports.index') }}">Papan laporan</a>
                 <a class="{{ request()->routeIs('portal.workdays') ? 'active' : '' }}" href="{{ route('portal.workdays') }}">Kerja bakti</a>
+                <a class="{{ request()->routeIs('admin.redemptions.*') ? 'active' : '' }}" href="{{ route('admin.redemptions.index') }}">Warga peduli</a>
             @else
                 <a class="{{ request()->routeIs('portal.dashboard') ? 'active' : '' }}" href="{{ route('portal.dashboard') }}">Beranda</a>
                 <a class="{{ request()->routeIs('portal.reports.create') ? 'active' : '' }}" href="{{ route('portal.reports.create') }}">Laporan</a>
@@ -47,5 +49,6 @@
         @yield('content')
     </main>
     <footer class="site-footer"><span>RawaRukun · Gerakan warga jaga sungai</span><span>Setiap laporan berarti.</span></footer>
+    @stack('scripts')
 </body>
 </html>

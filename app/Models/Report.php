@@ -10,6 +10,8 @@ class Report extends Model
     protected $fillable = [
         'user_id',
         'location',
+        'latitude',
+        'longitude',
         'density',
         'description',
         'photo_path',
