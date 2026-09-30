@@ -9,7 +9,7 @@
             <h1>Kelola warga peduli</h1>
             <p>Tinjau permintaan penukaran poin dan perbarui proses hadiah warga.</p>
         </div>
-        <a class="button button-outline" href="{{ route('admin.dashboard') }}">← Kembali ke ringkasan</a>
+        <a class="button button-outline" href="{{ route('admin.dashboard') }}">Kembali ke ringkasan</a>
     </div>
 
     <section class="admin-stats">
@@ -47,7 +47,7 @@
                 <tbody>
                     @forelse($redemptions as $redemption)
                         <tr>
-                            <td>{{ $redemption->user->name }}<br><span class="report-by">{{ $redemption->user->rt_rw }}</span></td>
+                            <td>{{ $redemption->user->name }}<br><span class="report-by">{{ $redemption->user->formatted_rt_rw }}</span></td>
                             <td>{{ ucfirst($redemption->reward) }}@if($redemption->provider)<br><span class="report-by">{{ ['dana' => 'DANA', 'gopay' => 'GoPay', 'ovo' => 'OVO', 'shopeepay' => 'ShopeePay'][$redemption->provider] ?? ucfirst($redemption->provider) }}</span>@endif</td>
                             <td>{{ $redemption->points }} poin<br><span class="report-by">Rp{{ number_format($redemption->points * 100, 0, ',', '.') }}</span></td>
                             <td>{{ $redemption->destination }}</td>

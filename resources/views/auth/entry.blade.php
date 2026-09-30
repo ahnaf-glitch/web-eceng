@@ -7,14 +7,14 @@
     <title>{{ $mode === 'register' ? 'Daftar warga' : 'Masuk' }} · RawaRukun</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
     <link href="{{ asset('css/site.css') }}" rel="stylesheet">
 </head>
 <body class="auth-page">
     <main class="auth-frame">
         <section class="auth-story">
             <a class="brand brand-on-dark" href="{{ route('login') }}">
-                <span class="brand-mark">rr</span><span>rawa<span class="brand-light">rukun</span><small>RAWAT SUNGAI BERSAMA</small></span>
+                <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36" focusable="false"><path d="M18 20v-8"/><path d="M18 16c-5 0-8-2.5-8-7 5 0 8 2.5 8 7Z"/><path d="M18 13c0-4.5 3-7 8-7 0 4.5-3 7-8 7Z"/><path d="M7 24c3-1.8 6-1.8 9 0s6 1.8 9 0 4-1.8 6-1"/><path d="M7 29c3-1.8 6-1.8 9 0s6 1.8 9 0 4-1.8 6-1"/></svg></span><span>rawa<span class="brand-light">rukun</span><small>RAWAT SUNGAI BERSAMA</small></span>
             </a>
             <div class="story-copy">
                 <span class="eyebrow eyebrow-light"><span class="live-dot"></span> GERAKAN WARGA, DAMPAK NYATA</span>
@@ -44,7 +44,7 @@
                     @else
                         <label class="remember-row"><input type="checkbox" name="remember" value="1"> Ingat saya</label>
                     @endif
-                    <button class="button button-primary button-wide" type="submit">{{ $mode === 'register' ? 'Buat akun warga' : 'Masuk ke RawaRukun' }} <span aria-hidden="true">→</span></button>
+                    <button class="button button-primary button-wide" type="submit">{{ $mode === 'register' ? 'Buat akun warga' : 'Masuk ke RawaRukun' }}</button>
                 </form>
                 <p class="auth-switch">{{ $mode === 'register' ? 'Sudah punya akun?' : 'Belum terdaftar?' }} <a href="{{ route($mode === 'register' ? 'login' : 'register') }}">{{ $mode === 'register' ? 'Masuk di sini' : 'Daftar sebagai warga' }}</a></p>
                 <p class="auth-note">Akun pengelola lingkungan dibuat oleh administrator sistem.</p>

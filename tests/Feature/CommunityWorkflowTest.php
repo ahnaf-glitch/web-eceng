@@ -14,6 +14,13 @@ class CommunityWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_rt_rw_display_format_adds_community_labels(): void
+    {
+        $resident = User::factory()->make(['rt_rw' => '1/1']);
+
+        $this->assertSame('RT 1 / RW 1', $resident->formatted_rt_rw);
+    }
+
     public function test_registration_and_report_submission_award_ten_points(): void
     {
         $this->post(route('register.store'), [

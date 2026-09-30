@@ -64,4 +64,15 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function getFormattedRtRwAttribute(): string
+    {
+        $rtRw = trim((string) $this->rt_rw);
+
+        if (preg_match('/^(?:RT\\s*)?(\\d+)\\s*\\/\\s*(?:RW\\s*)?(\\d+)$/i', $rtRw, $matches)) {
+            return 'RT '.$matches[1].' / RW '.$matches[2];
+        }
+
+        return $rtRw;
+    }
 }
