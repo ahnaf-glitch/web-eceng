@@ -134,5 +134,39 @@
             <article class="panel edu-card"><span class="edu-number">03</span><h2>Diolah dengan bijak</h2><p>Setelah dibersihkan dan dikeringkan dengan benar, eceng gondok dapat dimanfaatkan sebagai bahan kerajinan, kompos, atau bahan baku olahan sesuai kapasitas dan keamanan setempat.</p></article>
             <article class="panel edu-card edu-wide"><span class="eyebrow">PENTING UNTUK DIINGAT</span><h2>Jangan bekerja sendirian di sungai.</h2><p>Pengangkatan tanaman di perairan berisiko. Koordinasikan kegiatan dengan RT/RW, gunakan alat pelindung, hindari kontak dengan air tercemar, dan pastikan olahan tidak berasal dari perairan yang terkontaminasi logam berat atau limbah berbahaya.</p></article>
         </div>
+        <section class="education-activities" aria-labelledby="education-activities-title">
+            <div class="section-title"><div><span class="eyebrow">PILIH JALUR KEGIATAN</span><h2 id="education-activities-title">Eceng gondok jadi karya dan energi</h2></div></div>
+            <div class="education-pathways">
+                <article class="panel edu-pathway edu-craft">
+                    <div class="pathway-heading"><span class="pathway-mark" aria-hidden="true">01</span><div><span class="eyebrow">INDIVIDU</span><h3>Kerajinan untuk ibu-ibu</h3></div></div>
+                    <p>Kerjakan sendiri dari rumah, mulai dari produk sederhana lalu kembangkan sesuai keterampilan.</p>
+                    <div class="pathway-products"><strong>Ide produk</strong><span>Tas · keranjang · tikar · dompet · tempat pensil</span></div>
+                    <details class="pathway-details">
+                        <summary>Lihat langkah membuat kerajinan</summary>
+                        <ol>
+                            <li>Pilih batang yang sudah diangkat melalui kegiatan bersih sungai terjadwal.</li>
+                            <li>Bersihkan, belah atau pilah sesuai kebutuhan, lalu jemur sampai benar-benar kering.</li>
+                            <li>Anyam bahan menjadi produk sederhana dan rapikan ujungnya.</li>
+                            <li>Simpan di tempat kering; gunakan pewarna atau pelapis sesuai petunjuk keamanan produk.</li>
+                        </ol>
+                    </details>
+                </article>
+                <article class="panel edu-pathway edu-biogas">
+                    <div class="pathway-heading"><span class="pathway-mark" aria-hidden="true">02</span><div><span class="eyebrow">WAJIB BERKELOMPOK</span><h3>Biogas untuk bapak-bapak</h3></div></div>
+                    <p>Pengolahan biogas dilakukan sebagai kegiatan komunitas, bukan percobaan perorangan.</p>
+                    <div class="pathway-products"><strong>Mulai dengan</strong><span>Bentuk kelompok warga dan koordinasikan rencana dengan RT/RW.</span></div>
+                    <details class="pathway-details">
+                        <summary>Lihat tahapan kegiatan komunitas</summary>
+                        <ol>
+                            <li>Ajak warga membentuk kelompok, tetapkan koordinator dan pembagian tugas.</li>
+                            <li>Koordinasikan sumber bahan baku, lokasi, dan kebutuhan bersama pengurus lingkungan.</li>
+                            <li>Minta pendampingan tenaga teknis untuk menilai kelayakan dan merancang instalasi.</li>
+                            <li>Operasikan dan rawat instalasi bersama sesuai prosedur keselamatan dari pendamping.</li>
+                        </ol>
+                    </details>
+                    <p class="pathway-safety"><strong>Keselamatan:</strong> Jangan merakit digester atau menangani gas tanpa pendamping teknis. Hindari api dan hentikan kegiatan bila tercium kebocoran.</p>
+                </article>
+            </div>
+        </section>
     @endif
 @endsection

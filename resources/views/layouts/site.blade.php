@@ -7,14 +7,14 @@
     <title>@yield('title', 'RawaRukun') · RawaRukun</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
     @stack('styles')
     <link href="{{ asset('css/site.css') }}" rel="stylesheet">
 </head>
 <body class="app-shell">
     <header class="topbar">
         <a class="brand" href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('portal.dashboard') }}" aria-label="RawaRukun, beranda">
-            <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 36 36" focusable="false"><path d="M18 20v-8"/><path d="M18 16c-5 0-8-2.5-8-7 5 0 8 2.5 8 7Z"/><path d="M18 13c0-4.5 3-7 8-7 0 4.5-3 7-8 7Z"/><path d="M7 24c3-1.8 6-1.8 9 0s6 1.8 9 0 4-1.8 6-1"/><path d="M7 29c3-1.8 6-1.8 9 0s6 1.8 9 0 4-1.8 6-1"/></svg></span>
+            <span class="brand-mark" aria-hidden="true"></span>
             <span>rawa<span class="brand-light">rukun</span><small>RAWAT SUNGAI BERSAMA</small></span>
         </a>
         <nav class="main-nav" aria-label="Navigasi utama">
@@ -33,9 +33,9 @@
             @endif
         </nav>
         <div class="user-menu">
-            <img class="user-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=96&h=96&q=80" alt="Foto profil warga">
-            <span class="user-name">{{ auth()->user()->name }}<small>{{ auth()->user()->isAdmin() ? 'ADMINISTRATOR' : auth()->user()->formatted_rt_rw }}</small></span>
-            <form action="{{ route('logout') }}" method="POST">@csrf<button class="logout-button" type="submit" aria-label="Keluar" title="Keluar">Keluar</button></form>
+            <span class="user-avatar" aria-hidden="true"></span>
+            <span class="user-name">{{ auth()->user()->name }}<small>{{ auth()->user()->isAdmin() ? 'ADMINISTRATOR' : preg_replace('/^\s*(?:RT\s*)?(\d+)\s*\/\s*(?:RW\s*)?(\d+)\s*$/i', 'RT$1/RW$2', (string) auth()->user()->rt_rw) }}</small></span>
+            <form action="{{ route('logout') }}" method="POST">@csrf<button class="logout-button" type="submit">Keluar</button></form>
         </div>
     </header>
 

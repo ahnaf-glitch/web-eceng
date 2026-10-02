@@ -14,13 +14,6 @@ class CommunityWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_rt_rw_display_format_adds_community_labels(): void
-    {
-        $resident = User::factory()->make(['rt_rw' => '1/1']);
-
-        $this->assertSame('RT 1 / RW 1', $resident->formatted_rt_rw);
-    }
-
     public function test_registration_and_report_submission_award_ten_points(): void
     {
         $this->post(route('register.store'), [
@@ -127,6 +120,33 @@ class CommunityWorkflowTest extends TestCase
             ->assertSee('Titik eceng gondok di Sidoarjo')
             ->assertSee('Kali Cempaka')
             ->assertSee('112.72');
+    }
+
+    public function test_portal_header_has_blank_profile_logout_label_and_no_hero_points_stamp(): void
+    {
+        $resident = User::factory()->create(['rt_rw' => '1/1']);
+
+        $this->actingAs($resident)
+            ->get(route('portal.dashboard'))
+            ->assertOk()
+            ->assertSee('class="user-avatar" aria-hidden="true"></span>', false)
+            ->assertSee('RT1/RW1')
+            ->assertSee('>Keluar</button>', false)
+            ->assertDontSee('POIN PEDULI');
+    }
+
+    public function test_education_page_shows_individual_crafts_and_community_biogas_paths(): void
+    {
+        $resident = User::factory()->create();
+
+        $this->actingAs($resident)
+            ->get(route('portal.education'))
+            ->assertOk()
+            ->assertSee('Kerajinan untuk ibu-ibu')
+            ->assertSee('Tas · keranjang · tikar · dompet · tempat pensil')
+            ->assertSee('Biogas untuk bapak-bapak')
+            ->assertSee('Pengolahan biogas dilakukan sebagai kegiatan komunitas, bukan percobaan perorangan.')
+            ->assertSee('Bentuk kelompok warga dan koordinasikan rencana dengan RT/RW.');
     }
 
     public function test_report_coordinates_must_be_inside_the_sidoarjo_map_area(): void
