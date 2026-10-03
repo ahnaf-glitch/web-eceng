@@ -47,7 +47,7 @@
                     <button class="button button-primary button-wide" type="submit">{{ $mode === 'register' ? 'Buat akun warga' : 'Masuk ke RawaRukun' }}</button>
                 </form>
                 <p class="auth-switch">{{ $mode === 'register' ? 'Sudah punya akun?' : 'Belum terdaftar?' }} <a href="{{ route($mode === 'register' ? 'login' : 'register') }}">{{ $mode === 'register' ? 'Masuk di sini' : 'Daftar sebagai warga' }}</a></p>
-                <p class="auth-note">Akun pengelola lingkungan dibuat oleh administrator sistem.</p>
+                <p class="auth-note">{{ $mode === 'register' ? 'Pendaftaran warga perlu dikonfirmasi admin sebelum akun dapat digunakan.' : 'Akun pengelola lingkungan dibuat oleh administrator sistem.' }}</p>
             </div>
         </section>
     </main>

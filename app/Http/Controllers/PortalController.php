@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Redemption;
 use App\Models\Report;
 use App\Models\Workday;
+use App\Models\ActivityRegistration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PortalController extends Controller
@@ -128,6 +130,36 @@ class PortalController extends Controller
 
     public function education(): View
     {
-        return view('portal.index', ['page' => 'education']);
+        return view('portal.index', [
+            'page' => 'education',
+            'activityRegistrations' => auth()->user()->isAdmin()
+                ? collect()
+                : ActivityRegistration::where('user_id', auth()->id())->get()->keyBy('activity'),
+        ]);
+    }
+
+    public function registerActivity(Request $request): RedirectResponse
+    {
+        $attributes = $request->validate([
+            'activity' => [
+                'required',
+                'in:kerajinan,biogas',
+                Rule::unique('activity_registrations', 'activity')->where('user_id', $request->user()->id),
+            ],
+            'group_name' => ['required_if:activity,biogas', 'nullable', 'string', 'max:120'],
+            'members' => ['required_if:activity,biogas', 'array', 'min:2'],
+            'members.*.name' => ['required_if:activity,biogas', 'string', 'max:120'],
+            'members.*.rt_rw' => ['required_if:activity,biogas', 'string', 'max:40'],
+        ]);
+
+        ActivityRegistration::create([
+            'user_id' => $request->user()->id,
+            'activity' => $attributes['activity'],
+            'group_name' => $attributes['activity'] === 'biogas' ? $attributes['group_name'] : null,
+            'members' => $attributes['activity'] === 'biogas' ? $attributes['members'] : null,
+        ]);
+
+        return redirect()->route('portal.education')
+            ->with('success', 'Pendaftaran kegiatan berhasil dikirim dan menunggu konfirmasi admin.');
     }
 }

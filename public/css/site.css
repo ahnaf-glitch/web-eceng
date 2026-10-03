@@ -80,6 +80,8 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .status-diproses { color: #28658a; background: #e3f0f5; }
 .status-selesai { color: #26644a; background: #e4f1df; }
 .status-menunggu { color: #965b26; background: #fbefd9; }
+.status-disetujui { color: #26644a; background: #e4f1df; }
+.status-ditolak { color: #9b3d35; background: #f8e5e1; }
 .status-ditolak { color: #a34837; background: #fae6df; }
 .density-ringan { color: #3b7452; background: #e6f2e4; }
 .density-sedang { color: #95672d; background: #f8efd9; }
@@ -170,6 +172,10 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .education-activities .section-title { margin-bottom: 14px; }
 .education-activities .section-title h2 { margin: 5px 0 0; font: 500 24px var(--font-display); }
 .education-pathways { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.education-toc { display: grid; gap: 8px; margin: 0 0 14px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); font-size: 11px; }
+.education-toc strong { color: var(--green-dark); }
+.education-toc a { width: fit-content; color: var(--green-dark); text-decoration: underline; text-underline-offset: 3px; }
+.education-toc a:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 .edu-pathway { padding: 22px; }
 .pathway-heading { display: flex; align-items: center; gap: 12px; }
 .pathway-mark { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--green-dark); background: #e7efdc; font: 500 17px var(--font-display); }
@@ -184,12 +190,30 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .pathway-details ol { padding-left: 20px; color: var(--muted); font-size: 11px; line-height: 1.75; }
 .pathway-details li + li { margin-top: 5px; }
 .pathway-safety { padding: 10px 12px; border-radius: 3px; background: #fbede7; color: #7c4635 !important; }
-.admin-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.activity-registration-form { display: grid; gap: 8px; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--line); }
+.activity-registration-form label { color: var(--green-dark); font-size: 11px; font-weight: 700; }
+.activity-registration-form input { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: var(--white); font: inherit; }
+.activity-registration-form .button { justify-self: start; margin-top: 3px; }
+.activity-registration-status { margin-top: 15px !important; padding-top: 14px; border-top: 1px solid var(--line); }
+.activity-registration-status > p { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
+.activity-registration-status > strong { color: var(--green-dark); font-size: 11px; }
+.activity-member-list, .admin-member-list { margin: 7px 0 0; padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.activity-member-list span { color: var(--green-dark); }
+.activity-members { display: grid; gap: 10px; }
+.activity-member { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 4px; }
+.activity-member legend { padding: 0 5px; color: var(--green-dark); font-size: 11px; font-weight: 700; }
+.activity-member-fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; }
+.activity-member-fields label { display: grid; gap: 5px; }
+.member-remove { width: fit-content; padding: 0; border: 0; background: none; color: #9b3d35; cursor: pointer; font: inherit; font-size: 10px; }
+.admin-member-list { min-width: 180px; }
+.admin-stats { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
 .admin-stat { padding: 16px 18px; background: var(--white); border: 1px solid var(--line); border-radius: 5px; }
 .admin-stat span { color: var(--muted); font-size: 10px; }
 .admin-stat strong { display: block; margin-top: 9px; font: 600 27px var(--font-display); }
 .admin-shortcuts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 17px; }
 .shortcut-count { min-width: 20px; height: 20px; display: inline-grid; place-items: center; padding: 0 5px; color: var(--green-dark); background: var(--lime); border-radius: 50%; font-size: 10px; }
+.resident-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.resident-actions form { margin: 0; }
 .redemption-table { min-width: 900px; }
 .redemption-note { margin: 12px 2px; color: var(--muted); font-size: 10px; line-height: 1.6; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -251,6 +275,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
     .admin-stats { grid-template-columns: repeat(2, 1fr); }
     .education-grid { grid-template-columns: 1fr; }
     .education-pathways { grid-template-columns: 1fr; }
+    .activity-member-fields { grid-template-columns: 1fr; }
     .edu-wide { grid-column: auto; }
     .report-card { grid-template-columns: 1fr; }
     .report-controls { justify-content: flex-start; }

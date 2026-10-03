@@ -136,8 +136,13 @@
         </div>
         <section class="education-activities" aria-labelledby="education-activities-title">
             <div class="section-title"><div><span class="eyebrow">PILIH JALUR KEGIATAN</span><h2 id="education-activities-title">Eceng gondok jadi karya dan energi</h2></div></div>
+            <nav class="education-toc" aria-label="Daftar isi kegiatan">
+                <strong>Daftar isi kegiatan</strong>
+                <a href="#kerajinan-eceng-gondok">Kerajinan eceng gondok untuk ibu-ibu</a>
+                <a href="#biogas-eceng-gondok">Biogas untuk bapak-bapak (wajib berkelompok)</a>
+            </nav>
             <div class="education-pathways">
-                <article class="panel edu-pathway edu-craft">
+                <article class="panel edu-pathway edu-craft" id="kerajinan-eceng-gondok">
                     <div class="pathway-heading"><span class="pathway-mark" aria-hidden="true">01</span><div><span class="eyebrow">INDIVIDU</span><h3>Kerajinan untuk ibu-ibu</h3></div></div>
                     <p>Kerjakan sendiri dari rumah, mulai dari produk sederhana lalu kembangkan sesuai keterampilan.</p>
                     <div class="pathway-products"><strong>Ide produk</strong><span>Tas · keranjang · tikar · dompet · tempat pensil</span></div>
@@ -150,8 +155,17 @@
                             <li>Simpan di tempat kering; gunakan pewarna atau pelapis sesuai petunjuk keamanan produk.</li>
                         </ol>
                     </details>
+                    @if(isset($activityRegistrations['kerajinan']))
+                        <p class="activity-registration-status">Status pendaftaran: <span class="status-pill status-{{ $activityRegistrations['kerajinan']->status }}">{{ ucfirst($activityRegistrations['kerajinan']->status) }}</span></p>
+                    @else
+                        <form class="activity-registration-form" action="{{ route('portal.education.register') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="activity" value="kerajinan">
+                            <button class="button button-primary" type="submit">Daftar kegiatan kerajinan</button>
+                        </form>
+                    @endif
                 </article>
-                <article class="panel edu-pathway edu-biogas">
+                <article class="panel edu-pathway edu-biogas" id="biogas-eceng-gondok">
                     <div class="pathway-heading"><span class="pathway-mark" aria-hidden="true">02</span><div><span class="eyebrow">WAJIB BERKELOMPOK</span><h3>Biogas untuk bapak-bapak</h3></div></div>
                     <p>Pengolahan biogas dilakukan sebagai kegiatan komunitas, bukan percobaan perorangan.</p>
                     <div class="pathway-products"><strong>Mulai dengan</strong><span>Bentuk kelompok warga dan koordinasikan rencana dengan RT/RW.</span></div>
@@ -165,8 +179,72 @@
                         </ol>
                     </details>
                     <p class="pathway-safety"><strong>Keselamatan:</strong> Jangan merakit digester atau menangani gas tanpa pendamping teknis. Hindari api dan hentikan kegiatan bila tercium kebocoran.</p>
+                    @if(isset($activityRegistrations['biogas']))
+                        <div class="activity-registration-status">
+                            <p>Status pendaftaran kelompok: {{ $activityRegistrations['biogas']->group_name }} · <span class="status-pill status-{{ $activityRegistrations['biogas']->status }}">{{ ucfirst($activityRegistrations['biogas']->status) }}</span></p>
+                            @if($activityRegistrations['biogas']->members)
+                                <strong>Warga yang ikut mengolah</strong>
+                                <ul class="activity-member-list">
+                                    @foreach($activityRegistrations['biogas']->members as $member)
+                                        <li>{{ $member['name'] }} <span>{{ $member['rt_rw'] }}</span></li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <span class="field-help">Data anggota belum tercatat pada pendaftaran ini.</span>
+                            @endif
+                        </div>
+                    @else
+                        @php($biogasMembers = old('activity') === 'biogas' ? old('members', []) : [])
+                        <form class="activity-registration-form" action="{{ route('portal.education.register') }}" method="POST" data-group-registration>
+                            @csrf
+                            <input type="hidden" name="activity" value="biogas">
+                            <label for="biogas-group-name">Nama kelompok warga <span aria-hidden="true">*</span></label>
+                            <input id="biogas-group-name" name="group_name" value="{{ old('activity') === 'biogas' ? old('group_name') : '' }}" maxlength="120" placeholder="Contoh: Kelompok Sungai Bersih" required>
+                            <span class="field-help">Isi minimal dua warga yang ikut mengolah, beserta RT/RW masing-masing.</span>
+                            <div class="activity-members" data-members-list>
+                                @for($memberIndex = 0; $memberIndex < max(2, count($biogasMembers)); $memberIndex++)
+                                    <fieldset class="activity-member">
+                                        <legend>Warga <span data-member-number>{{ $memberIndex + 1 }}</span></legend>
+                                        <div class="activity-member-fields">
+                                            <label>Nama warga
+                                                <input name="members[{{ $memberIndex }}][name]" value="{{ old('activity') === 'biogas' ? old('members.'.$memberIndex.'.name') : '' }}" maxlength="120" autocomplete="name" required>
+                                            </label>
+                                            <label>RT / RW
+                                                <input name="members[{{ $memberIndex }}][rt_rw]" value="{{ old('activity') === 'biogas' ? old('members.'.$memberIndex.'.rt_rw') : '' }}" maxlength="40" placeholder="Contoh: RT 01 / RW 02" required>
+                                            </label>
+                                        </div>
+                                        @if($memberIndex >= 2)
+                                            <button class="member-remove" type="button" data-remove-member>Hapus warga</button>
+                                        @endif
+                                    </fieldset>
+                                @endfor
+                            </div>
+                            <button class="button button-outline" type="button" data-add-member>+ Tambah warga</button>
+                            <button class="button button-primary" type="submit">Daftar kelompok biogas</button>
+                            <template data-member-template>
+                                <fieldset class="activity-member">
+                                    <legend>Warga <span data-member-number></span></legend>
+                                    <div class="activity-member-fields">
+                                        <label>Nama warga
+                                            <input name="members[__INDEX__][name]" maxlength="120" autocomplete="name" required>
+                                        </label>
+                                        <label>RT / RW
+                                            <input name="members[__INDEX__][rt_rw]" maxlength="40" placeholder="Contoh: RT 01 / RW 02" required>
+                                        </label>
+                                    </div>
+                                    <button class="member-remove" type="button" data-remove-member>Hapus warga</button>
+                                </fieldset>
+                            </template>
+                        </form>
+                    @endif
                 </article>
             </div>
         </section>
     @endif
 @endsection
+
+@if($page === 'education')
+    @push('scripts')
+        <script src="{{ asset('js/activity-registration.js') }}" defer></script>
+    @endpush
+@endif

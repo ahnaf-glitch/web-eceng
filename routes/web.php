@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/warga-peduli', [PortalController::class, 'rewards'])->name('portal.rewards');
     Route::post('/warga-peduli/tukar', [PortalController::class, 'redeem'])->name('portal.redeem');
     Route::get('/edukasi', [PortalController::class, 'education'])->name('portal.education');
+    Route::post('/edukasi/pendaftaran', [PortalController::class, 'registerActivity'])->name('portal.education.register');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
@@ -35,4 +36,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/kerja-bakti', [AdminController::class, 'storeWorkday'])->name('workdays.store');
     Route::get('/warga-peduli', [AdminController::class, 'redemptions'])->name('redemptions.index');
     Route::patch('/warga-peduli/{redemption}', [AdminController::class, 'updateRedemption'])->name('redemptions.update');
+    Route::get('/warga', [AdminController::class, 'residents'])->name('residents.index');
+    Route::patch('/warga/{user}', [AdminController::class, 'updateResident'])->name('residents.update');
+    Route::get('/kegiatan-edukasi', [AdminController::class, 'activityRegistrations'])->name('activity-registrations.index');
+    Route::patch('/kegiatan-edukasi/{activityRegistration}', [AdminController::class, 'updateActivityRegistration'])->name('activity-registrations.update');
 });

@@ -29,11 +29,9 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = User::create($attributes);
-        Auth::login($user);
-        $request->session()->regenerate();
+        User::create([...$attributes, 'registration_status' => 'menunggu']);
 
-        return redirect()->route('portal.dashboard')->with('success', 'Selamat datang di RawaRukun.');
+        return redirect()->route('login')->with('success', 'Pendaftaran berhasil dikirim. Akun dapat digunakan setelah dikonfirmasi admin.');
     }
 
     public function login(Request $request): RedirectResponse
@@ -43,13 +41,24 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::validate($credentials)) {
             return back()->withErrors(['email' => 'Email atau kata sandi tidak cocok.'])->onlyInput('email');
         }
 
+        $user = User::where('email', $credentials['email'])->firstOrFail();
+
+        if ($user->registration_status !== 'disetujui') {
+            $message = $user->registration_status === 'ditolak'
+                ? 'Pendaftaran akun Anda ditolak. Silakan hubungi admin lingkungan.'
+                : 'Pendaftaran akun Anda masih menunggu konfirmasi admin.';
+
+            return back()->withErrors(['email' => $message])->onlyInput('email');
+        }
+
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route(auth()->user()->isAdmin() ? 'admin.dashboard' : 'portal.dashboard'));
+        return redirect()->intended(route($user->isAdmin() ? 'admin.dashboard' : 'portal.dashboard'));
     }
 
     public function logout(Request $request): RedirectResponse
