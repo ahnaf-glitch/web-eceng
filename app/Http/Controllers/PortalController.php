@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityRegistration;
 use App\Models\Redemption;
 use App\Models\Report;
 use App\Models\Workday;
-use App\Models\ActivityRegistration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,52 +17,68 @@ class PortalController extends Controller
     public function dashboard(): View
     {
         $user = auth()->user();
+        $reportsInScope = Report::query()->when(
+            $user->isRtRw(),
+            fn ($query) => $query->forRtRw((string) $user->rt_rw)
+        );
 
         return view('portal.index', [
             'page' => 'dashboard',
-            'myReports' => $user->reports()->latest()->take(3)->get(),
-            'reportCount' => Report::count(),
-            'resolvedCount' => Report::where('status', 'selesai')->count(),
+            'myReports' => $user->isRtRw()
+                ? (clone $reportsInScope)->with('user')->latest()->take(3)->get()
+                : $user->reports()->latest()->take(3)->get(),
+            'reportCount' => (clone $reportsInScope)->count(),
+            'resolvedCount' => (clone $reportsInScope)->where('status', 'selesai')->count(),
             'upcomingWorkday' => Workday::where('starts_at', '>=', now())->orderBy('starts_at')->first(),
         ]);
     }
 
     public function createReport(): View
     {
+        abort_unless(auth()->user()->isResident(), 403);
+
         return view('portal.index', ['page' => 'report-form']);
     }
 
     public function storeReport(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->isResident(), 403);
+
         $attributes = $request->validate([
             'location' => ['required', 'string', 'max:255'],
             'latitude' => ['required', 'numeric', 'between:-7.7,-7.18'],
             'longitude' => ['required', 'numeric', 'between:112.45,113.15'],
             'density' => ['required', 'in:ringan,sedang,parah'],
             'description' => ['required', 'string', 'max:2000'],
+            'deposit_weight' => ['nullable', 'integer', 'min:1'],
             'photo' => ['nullable', 'image', 'max:5120'],
         ]);
 
         DB::transaction(function () use ($request, $attributes): void {
             $report = Report::create([
                 'user_id' => $request->user()->id,
+                'rt_rw' => $request->user()->rt_rw,
                 'location' => $attributes['location'],
                 'latitude' => $attributes['latitude'],
                 'longitude' => $attributes['longitude'],
                 'density' => $attributes['density'],
                 'description' => $attributes['description'],
+                'deposit_weight' => $attributes['deposit_weight'] ?? null,
                 'photo_path' => $request->file('photo')?->store('reports', 'public'),
             ]);
-
-            $request->user()->increment('points', 10);
         });
 
-        return redirect()->route('portal.reports.index')->with('success', 'Laporan terkirim. 10 poin sudah ditambahkan ke saldo Anda.');
+        return redirect()->route('portal.reports.index')
+            ->with('success', 'Laporan terkirim dan menunggu validasi Kelurahan. Poin diberikan setelah laporan dinyatakan valid.');
     }
 
     public function reports(Request $request): View
     {
         $filteredReports = Report::query()
+            ->when(
+                $request->user()->isRtRw(),
+                fn ($query) => $query->forRtRw((string) $request->user()->rt_rw)
+            )
             ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
             ->when($request->query('density'), fn ($query, $density) => $query->where('density', $density));
 
@@ -98,29 +114,33 @@ class PortalController extends Controller
 
     public function rewards(): View
     {
+        abort_unless(auth()->user()->isResident(), 403);
+
         return view('portal.index', [
             'page' => 'rewards',
             'redemptions' => auth()->user()->redemptions()->latest()->take(8)->get(),
+            'rewards' => Redemption::REWARDS,
         ]);
     }
 
     public function redeem(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->isResident(), 403);
+
         $attributes = $request->validate([
-            'reward' => ['required', 'in:pulsa,token listrik,e-wallet'],
-            'provider' => ['required_if:reward,e-wallet', 'nullable', 'in:dana,gopay,ovo,shopeepay'],
-            'points' => ['required', 'integer', 'min:10', 'multiple_of:10'],
+            'reward' => ['required', Rule::in(array_keys(Redemption::REWARDS))],
             'destination' => ['required', 'string', 'max:100'],
         ]);
+        $reward = Redemption::REWARDS[$attributes['reward']];
 
-        DB::transaction(function () use ($request, $attributes): void {
+        DB::transaction(function () use ($request, $attributes, $reward): void {
             $user = $request->user()->newQuery()->lockForUpdate()->findOrFail($request->user()->id);
-            abort_if($user->points < $attributes['points'], 422, 'Saldo poin tidak mencukupi.');
+            abort_if($user->points < $reward['points'], 422, 'Saldo poin tidak mencukupi untuk hadiah ini.');
 
-            $user->decrement('points', $attributes['points']);
+            $user->decrement('points', $reward['points']);
             Redemption::create([
                 ...$attributes,
-                'provider' => $attributes['reward'] === 'e-wallet' ? $attributes['provider'] : null,
+                'points' => $reward['points'],
                 'user_id' => $user->id,
             ]);
         });
@@ -130,6 +150,8 @@ class PortalController extends Controller
 
     public function education(): View
     {
+        abort_unless(auth()->user()->isResident(), 403);
+
         return view('portal.index', [
             'page' => 'education',
             'activityRegistrations' => auth()->user()->isAdmin()
@@ -140,6 +162,8 @@ class PortalController extends Controller
 
     public function registerActivity(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->isResident(), 403);
+
         $attributes = $request->validate([
             'activity' => [
                 'required',

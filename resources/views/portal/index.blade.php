@@ -18,12 +18,6 @@
         <script src="{{ asset('js/reports-map.js') }}" defer></script>
     @endpush
 @endif
-@if($page === 'rewards')
-    @push('scripts')
-        <script src="{{ asset('js/rewards.js') }}" defer></script>
-    @endpush
-@endif
-
 @section('content')
     @if($page === 'dashboard')
         <section class="dashboard-hero">
@@ -31,7 +25,9 @@
                 <span class="eyebrow eyebrow-light"><span class="live-dot"></span> RAWAT SUNGAI, RAWAT MASA DEPAN</span>
                 <h1>Halo, {{ explode(' ', auth()->user()->name)[0] }}.<br>Yuk jaga sungai <em>kita.</em></h1>
                 <p>Satu laporan kecil bisa menggerakkan satu lingkungan. Pantau kondisi sungai dan ikut aksi nyata bersama warga.</p>
-                <a class="button button-primary" href="{{ route('portal.reports.create') }}">Laporkan eceng gondok</a>
+                @unless(auth()->user()->isRtRw() || auth()->user()->isAdmin())
+                    <a class="button button-primary" href="{{ route('portal.reports.create') }}">Laporkan eceng gondok</a>
+                @endunless
             </div>
         </section>
         <section class="stats-row" aria-label="Ringkasan kondisi lingkungan">
@@ -69,14 +65,15 @@
                     <div class="field field-full"><label>Titik eceng gondok di peta Sidoarjo</label><div id="report-map" class="report-map" data-map-mode="pick" aria-label="Peta untuk menentukan titik laporan"></div><input id="latitude" name="latitude" type="hidden" value="{{ old('latitude') }}"><input id="longitude" name="longitude" type="hidden" value="{{ old('longitude') }}"><span id="map-selection" class="field-help" aria-live="polite">Pilih titik pada peta agar pengurus dapat menemukan lokasi secara akurat.</span></div>
                     <div class="field field-full"><label for="density">Tingkat kepadatan eceng gondok</label><select id="density" name="density" required><option value="">Pilih tingkat kepadatan</option><option value="ringan" @selected(old('density') === 'ringan')>Ringan · tumbuh tersebar</option><option value="sedang" @selected(old('density') === 'sedang')>Sedang · menutup sebagian aliran</option><option value="parah" @selected(old('density') === 'parah')>Parah · menutup sebagian besar aliran</option></select></div>
                     <div class="field field-full"><label for="description">Keterangan laporan</label><textarea id="description" name="description" maxlength="2000" placeholder="Ceritakan kondisi yang terlihat, patokan lokasi, atau hal yang perlu diperhatikan." required>{{ old('description') }}</textarea><span class="field-help">Maksimal 2.000 karakter. Jangan masuk ke sungai atau mengambil risiko saat mengambil foto.</span></div>
+                    <div class="field field-full"><label for="deposit_weight">Berat eceng gondok yang disetor (kg, opsional)</label><input id="deposit_weight" name="deposit_weight" type="number" min="1" step="1" value="{{ old('deposit_weight') }}" placeholder="Kosongkan jika hanya melaporkan"><span class="field-help">Kelurahan memvalidasi laporan dan setoran. Laporan valid tanpa setoran mendapat 4 poin; setoran mendapat 10 poin/kg.</span></div>
                     <div class="field field-full"><label for="photo">Foto kondisi (opsional)</label><input id="photo" type="file" name="photo" accept="image/*"><span class="field-help">Format gambar, maksimal 5 MB.</span></div>
                     <div class="field field-full"><button class="button button-primary" type="submit">Kirim laporan</button></div>
                 </div>
             </form>
-            <aside class="report-aside"><span class="eyebrow">WARGA PEDULI</span><h3>Suaramu jadi aksi.</h3><p>Setiap laporan yang berhasil dikirim mendapat 10 poin. Pengurus RT/RW akan memeriksa laporan dan memperbarui statusnya.</p><div class="points-callout"><strong>10</strong><span>poin untuk setiap laporan<br>senilai Rp1.000</span></div></aside>
+            <aside class="report-aside"><span class="eyebrow">WARGA PEDULI</span><h3>Suaramu jadi aksi.</h3><p>Poin diberikan setelah Kelurahan memvalidasi laporan. Laporan pertama yang valid mendapat poin; laporan duplikat tidak mendapat poin.</p><div class="points-callout"><strong>4 / 10</strong><span>poin per laporan tanpa setor<br>atau per kg setoran</span></div></aside>
         </div>
     @elseif($page === 'reports')
-        <div class="page-heading"><div><span class="eyebrow">TRANSPARANSI LINGKUNGAN</span><h1>Papan laporan</h1><p>Pantau laporan warga dan perkembangan penanganan eceng gondok di lingkungan.</p></div>@unless(auth()->user()->isAdmin())<a class="button button-primary" href="{{ route('portal.reports.create') }}">+ Buat laporan</a>@endunless</div>
+        <div class="page-heading"><div><span class="eyebrow">TRANSPARANSI LINGKUNGAN</span><h1>Papan laporan</h1><p>{{ auth()->user()->isRtRw() ? 'Pantau laporan dan penanganan di wilayah '.auth()->user()->rt_rw.'.' : 'Pantau laporan warga dan perkembangan penanganan eceng gondok di lingkungan.' }}</p></div>@if(auth()->user()->isResident())<a class="button button-primary" href="{{ route('portal.reports.create') }}">+ Buat laporan</a>@endif</div>
         <form class="filter-bar" method="GET" action="{{ route('portal.reports.index') }}">
             <div class="field"><label for="status-filter">Status</label><select id="status-filter" name="status"><option value="">Semua status</option><option value="baru" @selected(request('status') === 'baru')>Baru</option><option value="diproses" @selected(request('status') === 'diproses')>Diproses</option><option value="selesai" @selected(request('status') === 'selesai')>Selesai</option></select></div>
             <div class="field"><label for="density-filter">Kepadatan</label><select id="density-filter" name="density"><option value="">Semua tingkat</option><option value="ringan" @selected(request('density') === 'ringan')>Ringan</option><option value="sedang" @selected(request('density') === 'sedang')>Sedang</option><option value="parah" @selected(request('density') === 'parah')>Parah</option></select></div>
@@ -92,9 +89,34 @@
         <div class="report-list">
             @forelse($reports as $report)
                 <article class="panel report-card">
-                    <div><h3>{{ $report->location }}</h3><div class="report-meta"><span class="density-pill density-{{ $report->density }}">Kepadatan {{ ucfirst($report->density) }}</span><span class="status-pill status-{{ $report->status }}">{{ ucfirst($report->status) }}</span><span class="report-by">{{ $report->user->name }} · {{ $report->created_at->translatedFormat('d M Y') }}</span></div><p>{{ $report->description }}</p>@if($report->photo_path)<a href="{{ asset('storage/'.$report->photo_path) }}" target="_blank" rel="noopener"><img class="report-photo" src="{{ asset('storage/'.$report->photo_path) }}" alt="Foto laporan eceng gondok"></a>@endif</div>
+                    <div>
+                        <h3>{{ $report->location }}</h3>
+                        <div class="report-meta">
+                            <span class="density-pill density-{{ $report->density }}">Kepadatan {{ ucfirst($report->density) }}</span>
+                            <span class="status-pill status-{{ $report->status }}">{{ ucfirst($report->status) }}</span>
+                            <span class="report-by">{{ $report->user->name }} · {{ $report->rt_rw ?? $report->user->rt_rw }} · {{ $report->created_at->translatedFormat('d M Y') }}</span>
+                        </div>
+                        <p>{{ $report->description }}</p>
+                        @if($report->deposit_weight)
+                            <p class="report-by">Setoran: {{ $report->deposit_weight }} kg</p>
+                        @endif
+                        <p class="report-by">
+                            Validasi: {{ ucfirst($report->validation_status) }}
+                            @if($report->validation_status === 'valid')
+                                · {{ $report->points_awarded }} poin diberikan
+                            @endif
+                        </p>
+                        @if($report->photo_path)
+                            <a href="{{ asset('storage/'.$report->photo_path) }}" target="_blank" rel="noopener"><img class="report-photo" src="{{ asset('storage/'.$report->photo_path) }}" alt="Foto laporan eceng gondok"></a>
+                        @endif
+                    </div>
                     @if(auth()->user()->isAdmin())
-                        <form class="report-controls" action="{{ route('admin.reports.update', $report) }}" method="POST">@csrf @method('PATCH')<label class="field-help" for="status-{{ $report->id }}">Ubah status</label><select id="status-{{ $report->id }}" name="status"><option value="baru" @selected($report->status === 'baru')>Baru</option><option value="diproses" @selected($report->status === 'diproses')>Diproses</option><option value="selesai" @selected($report->status === 'selesai')>Selesai</option></select><button class="button button-secondary" type="submit">Simpan</button></form>
+                        <div>
+                            <form class="report-controls" action="{{ route('admin.reports.update', $report) }}" method="POST">@csrf @method('PATCH')<label class="field-help" for="status-{{ $report->id }}">Ubah status penanganan</label><select id="status-{{ $report->id }}" name="status"><option value="baru" @selected($report->status === 'baru')>Baru</option><option value="diproses" @selected($report->status === 'diproses')>Diproses</option><option value="selesai" @selected($report->status === 'selesai')>Selesai</option></select><button class="button button-secondary" type="submit">Simpan status</button></form>
+                            @if($report->validation_status === 'menunggu')
+                                <form class="report-controls" action="{{ route('admin.reports.validate', $report) }}" method="POST">@csrf @method('PATCH')<label class="field-help" for="validation-{{ $report->id }}">Validasi laporan</label><select id="validation-{{ $report->id }}" name="validation_status"><option value="valid">Valid</option><option value="duplikat">Duplikat</option></select><button class="button button-secondary" type="submit">Simpan validasi</button></form>
+                            @endif
+                        </div>
                     @endif
                 </article>
             @empty
@@ -120,12 +142,13 @@
             @endif
         </div>
     @elseif($page === 'rewards')
-        <div class="page-heading"><div><span class="eyebrow">APRESIASI UNTUK WARGA</span><h1>Warga peduli</h1><p>Kontribusi nyata mendapat apresiasi. Kumpulkan dan tukarkan poin kepedulianmu.</p></div></div>
-        <section class="rewards-hero"><div><span class="eyebrow eyebrow-light">SALDO POIN SAYA</span><h2>{{ auth()->user()->points }} poin</h2><p>Setiap 10 poin bernilai Rp1.000.</p></div><div class="rupiah-note">Poin didapat dari laporan warga dan dapat ditukar menjadi pulsa, token listrik, atau saldo e-wallet.</div></section>
+        <div class="page-heading"><div><span class="eyebrow">APRESIASI UNTUK WARGA</span><h1>Warga peduli</h1><p>Kumpulkan poin dari laporan valid dan kegiatan edukasi, lalu ajukan salah satu apresiasi yang tersedia.</p></div></div>
+        <section class="rewards-hero"><div><span class="eyebrow eyebrow-light">SALDO POIN SAYA</span><h2>{{ auth()->user()->points }} poin</h2><p>Poin digunakan untuk mengajukan apresiasi kontributor.</p></div><div class="rupiah-note">Laporan mendapat poin setelah validasi Kelurahan. Duplikat tidak mendapat poin.</div></section>
         <div class="reward-layout">
-            <form class="panel reward-form" action="{{ route('portal.redeem') }}" method="POST">@csrf<h2>Tukar poin</h2><div class="field"><label for="reward">Pilih hadiah</label><select id="reward" name="reward" required><option value="">Pilih bentuk penukaran</option><option value="pulsa" @selected(old('reward') === 'pulsa')>Pulsa</option><option value="token listrik" @selected(old('reward') === 'token listrik')>Token listrik</option><option value="e-wallet" @selected(old('reward') === 'e-wallet')>E-wallet</option></select></div><div class="field wallet-provider" id="wallet-provider-field" style="margin-top:13px" @if(old('reward') !== 'e-wallet') hidden @endif><label for="provider">Pilih e-wallet</label><select id="provider" name="provider" @if(old('reward') !== 'e-wallet') disabled @endif><option value="">Pilih penyedia e-wallet</option><option value="dana" @selected(old('provider') === 'dana')>DANA</option><option value="gopay" @selected(old('provider') === 'gopay')>GoPay</option><option value="ovo" @selected(old('provider') === 'ovo')>OVO</option><option value="shopeepay" @selected(old('provider') === 'shopeepay')>ShopeePay</option></select></div><div class="field" style="margin-top:13px"><label for="points">Jumlah poin</label><input id="points" type="number" name="points" min="10" step="10" value="{{ old('points', 10) }}" required><span class="field-help">Kelipatan 10 poin. 10 poin setara Rp1.000.</span></div><div class="field" style="margin-top:13px"><label for="destination">Nomor tujuan</label><input id="destination" name="destination" value="{{ old('destination') }}" placeholder="Nomor HP atau ID akun tujuan" required></div><button class="button button-primary" style="margin-top:17px" type="submit">Ajukan penukaran</button></form>
-            <section class="panel history-panel"><h2>Riwayat penukaran</h2>@forelse($redemptions as $redemption)<div class="history-row"><div><strong>{{ ucfirst($redemption->reward) }}@if($redemption->provider) · {{ ['dana' => 'DANA', 'gopay' => 'GoPay', 'ovo' => 'OVO', 'shopeepay' => 'ShopeePay'][$redemption->provider] ?? ucfirst($redemption->provider) }}@endif · {{ $redemption->destination }}</strong><small>{{ $redemption->created_at->translatedFormat('d M Y') }} · {{ $redemption->points }} poin (Rp{{ number_format($redemption->points * 100, 0, ',', '.') }})</small></div><span class="status-pill status-{{ $redemption->status === 'menunggu' ? 'diproses' : 'selesai' }}">{{ ucfirst($redemption->status) }}</span></div>@empty<p class="empty-state">Belum ada penukaran poin.</p>@endforelse</section>
+            <form class="panel reward-form" action="{{ route('portal.redeem') }}" method="POST">@csrf<h2>Ajukan apresiasi</h2><div class="field"><label for="reward">Pilih hadiah</label><select id="reward" name="reward" required><option value="">Pilih apresiasi</option>@foreach($rewards as $key => $reward)<option value="{{ $key }}" @selected(old('reward') === $key)>{{ $reward['label'] }} · {{ number_format($reward['points'], 0, ',', '.') }} poin</option>@endforeach</select></div><div class="field" style="margin-top:13px"><label for="destination">Kontak/alamat untuk penyerahan hadiah</label><input id="destination" name="destination" value="{{ old('destination') }}" placeholder="Nomor HP, email, atau alamat" required></div><span class="field-help">Poin hadiah akan dipotong saat pengajuan dan dikembalikan jika Kelurahan menolak permintaan.</span><button class="button button-primary" style="margin-top:17px" type="submit">Ajukan hadiah</button></form>
+            <section class="panel history-panel"><h2>Riwayat apresiasi</h2>@forelse($redemptions as $redemption)<div class="history-row"><div><strong>{{ $redemption->rewardLabel() }} · {{ $redemption->destination }}</strong><small>{{ $redemption->created_at->translatedFormat('d M Y') }} · {{ $redemption->points }} poin</small></div><span class="status-pill status-{{ $redemption->status === 'menunggu' ? 'diproses' : 'selesai' }}">{{ ucfirst($redemption->status) }}</span></div>@empty<p class="empty-state">Belum ada pengajuan apresiasi.</p>@endforelse</section>
         </div>
+        <section class="panel history-panel" style="margin-top:22px"><h2>Tingkatan apresiasi poin</h2>@foreach($rewards as $reward)<div class="history-row"><strong>{{ $reward['points'] }} poin · {{ $reward['label'] }}</strong></div>@endforeach</section>
     @else
         <div class="page-heading"><div><span class="eyebrow">KENALI, CEGAH, OLAH</span><h1>Belajar tentang eceng gondok</h1><p>Kenali dampaknya dan pilihan penanganan yang bijak untuk ekosistem sungai.</p></div></div>
         <div class="education-grid">
@@ -145,6 +168,7 @@
                 <article class="panel edu-pathway edu-craft" id="kerajinan-eceng-gondok">
                     <div class="pathway-heading"><span class="pathway-mark" aria-hidden="true">01</span><div><span class="eyebrow">INDIVIDU</span><h3>Kerajinan untuk ibu-ibu</h3></div></div>
                     <p>Kerjakan sendiri dari rumah, mulai dari produk sederhana lalu kembangkan sesuai keterampilan.</p>
+                    <p class="field-help">Edukasi individu: 10 poin setelah pendaftaran disetujui Kelurahan.</p>
                     <div class="pathway-products"><strong>Ide produk</strong><span>Tas · keranjang · tikar · dompet · tempat pensil</span></div>
                     <details class="pathway-details">
                         <summary>Lihat langkah membuat kerajinan</summary>
@@ -156,7 +180,11 @@
                         </ol>
                     </details>
                     @if(isset($activityRegistrations['kerajinan']))
-                        <p class="activity-registration-status">Status pendaftaran: <span class="status-pill status-{{ $activityRegistrations['kerajinan']->status }}">{{ ucfirst($activityRegistrations['kerajinan']->status) }}</span></p>
+                        <p class="activity-registration-status">Status pendaftaran: <span class="status-pill status-{{ $activityRegistrations['kerajinan']->status }}">{{ ucfirst($activityRegistrations['kerajinan']->status) }}</span>
+                            @if($activityRegistrations['kerajinan']->points_awarded > 0)
+                                · {{ $activityRegistrations['kerajinan']->points_awarded }} poin
+                            @endif
+                        </p>
                     @else
                         <form class="activity-registration-form" action="{{ route('portal.education.register') }}" method="POST">
                             @csrf
@@ -168,6 +196,7 @@
                 <article class="panel edu-pathway edu-biogas" id="biogas-eceng-gondok">
                     <div class="pathway-heading"><span class="pathway-mark" aria-hidden="true">02</span><div><span class="eyebrow">WAJIB BERKELOMPOK</span><h3>Biogas untuk bapak-bapak</h3></div></div>
                     <p>Pengolahan biogas dilakukan sebagai kegiatan komunitas, bukan percobaan perorangan.</p>
+                    <p class="field-help">Edukasi kelompok: 20 poin untuk akun pendaftar setelah pendaftaran disetujui Kelurahan.</p>
                     <div class="pathway-products"><strong>Mulai dengan</strong><span>Bentuk kelompok warga dan koordinasikan rencana dengan RT/RW.</span></div>
                     <details class="pathway-details">
                         <summary>Lihat tahapan kegiatan komunitas</summary>
@@ -181,7 +210,11 @@
                     <p class="pathway-safety"><strong>Keselamatan:</strong> Jangan merakit digester atau menangani gas tanpa pendamping teknis. Hindari api dan hentikan kegiatan bila tercium kebocoran.</p>
                     @if(isset($activityRegistrations['biogas']))
                         <div class="activity-registration-status">
-                            <p>Status pendaftaran kelompok: {{ $activityRegistrations['biogas']->group_name }} · <span class="status-pill status-{{ $activityRegistrations['biogas']->status }}">{{ ucfirst($activityRegistrations['biogas']->status) }}</span></p>
+                            <p>Status pendaftaran kelompok: {{ $activityRegistrations['biogas']->group_name }} · <span class="status-pill status-{{ $activityRegistrations['biogas']->status }}">{{ ucfirst($activityRegistrations['biogas']->status) }}</span>
+                                @if($activityRegistrations['biogas']->points_awarded > 0)
+                                    · {{ $activityRegistrations['biogas']->points_awarded }} poin untuk akun pendaftar
+                                @endif
+                            </p>
                             @if($activityRegistrations['biogas']->members)
                                 <strong>Warga yang ikut mengolah</strong>
                                 <ul class="activity-member-list">

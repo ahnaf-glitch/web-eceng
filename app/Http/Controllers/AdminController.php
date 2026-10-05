@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Report;
-use App\Models\Redemption;
-use App\Models\Workday;
-use App\Models\User;
 use App\Models\ActivityRegistration;
+use App\Models\Redemption;
+use App\Models\Report;
+use App\Models\User;
+use App\Models\Workday;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,15 +33,15 @@ class AdminController extends Controller
         $status = $request->query('status');
 
         return view('admin.residents', [
-            'residents' => User::where('role', 'warga')
+            'residents' => User::whereIn('role', ['warga', 'rt_rw'])
                 ->when(in_array($status, ['menunggu', 'disetujui', 'ditolak'], true), fn ($query) => $query->where('registration_status', $status))
                 ->latest()
                 ->paginate(12)
                 ->withQueryString(),
             'status' => $status,
-            'pendingCount' => User::where('role', 'warga')->where('registration_status', 'menunggu')->count(),
-            'approvedCount' => User::where('role', 'warga')->where('registration_status', 'disetujui')->count(),
-            'rejectedCount' => User::where('role', 'warga')->where('registration_status', 'ditolak')->count(),
+            'pendingCount' => User::whereIn('role', ['warga', 'rt_rw'])->where('registration_status', 'menunggu')->count(),
+            'approvedCount' => User::whereIn('role', ['warga', 'rt_rw'])->where('registration_status', 'disetujui')->count(),
+            'rejectedCount' => User::whereIn('role', ['warga', 'rt_rw'])->where('registration_status', 'ditolak')->count(),
         ]);
     }
 
@@ -64,6 +64,24 @@ class AdminController extends Controller
             : 'Pendaftaran warga ditolak.';
 
         return back()->with('success', $message);
+    }
+
+    public function updateResidentRole(Request $request, User $user): RedirectResponse
+    {
+        $attributes = $request->validate([
+            'role' => ['required', 'in:warga,rt_rw'],
+        ]);
+
+        DB::transaction(function () use ($user, $attributes): void {
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
+            abort_unless(in_array($lockedUser->role, ['warga', 'rt_rw'], true), 404);
+            abort_if($lockedUser->registration_status !== 'disetujui', 422, 'Hanya akun yang disetujui yang dapat diberi peran RT/RW.');
+            abort_if($attributes['role'] === 'rt_rw' && blank($lockedUser->rt_rw), 422, 'Akun RT/RW harus memiliki wilayah RT/RW.');
+
+            $lockedUser->update($attributes);
+        });
+
+        return back()->with('success', 'Peran akun berhasil diperbarui.');
     }
 
     public function activityRegistrations(Request $request): View
@@ -96,9 +114,20 @@ class AdminController extends Controller
                 return ['updated' => false, 'status' => $lockedRegistration->status];
             }
 
-            $lockedRegistration->update($attributes);
+            $points = $attributes['status'] === 'disetujui'
+                ? ($lockedRegistration->activity === 'biogas' ? 20 : 10)
+                : 0;
 
-            return ['updated' => true, 'status' => $lockedRegistration->status];
+            if ($points > 0) {
+                User::query()->lockForUpdate()->findOrFail($lockedRegistration->user_id)->increment('points', $points);
+            }
+
+            $lockedRegistration->update([
+                ...$attributes,
+                'points_awarded' => $points,
+            ]);
+
+            return ['updated' => true, 'status' => $lockedRegistration->status, 'points' => $points];
         });
 
         if (! $result['updated']) {
@@ -109,7 +138,7 @@ class AdminController extends Controller
             return back()->withErrors(['status' => 'Pendaftaran kegiatan ini sudah diputuskan dan tidak dapat diubah.']);
         }
 
-        return back()->with('success', 'Status pendaftaran kegiatan berhasil diperbarui.');
+        return back()->with('success', "Status pendaftaran kegiatan berhasil diperbarui. {$result['points']} poin diberikan.");
     }
 
     public function redemptions(Request $request): View
@@ -156,6 +185,50 @@ class AdminController extends Controller
         $report->update($attributes);
 
         return back()->with('success', 'Status laporan diperbarui.');
+    }
+
+    public function validateReport(Request $request, Report $report): RedirectResponse
+    {
+        $attributes = $request->validate([
+            'validation_status' => ['required', 'in:valid,duplikat'],
+        ]);
+
+        $result = DB::transaction(function () use ($report, $attributes): array {
+            $lockedReport = Report::query()->lockForUpdate()->findOrFail($report->id);
+
+            if ($lockedReport->validation_status !== 'menunggu') {
+                return ['updated' => false, 'status' => $lockedReport->validation_status];
+            }
+
+            $points = $attributes['validation_status'] === 'valid'
+                ? ($lockedReport->deposit_weight ? $lockedReport->deposit_weight * 10 : 4)
+                : 0;
+
+            if ($points > 0) {
+                User::query()->lockForUpdate()->findOrFail($lockedReport->user_id)->increment('points', $points);
+            }
+
+            $lockedReport->update([
+                'validation_status' => $attributes['validation_status'],
+                'points_awarded' => $points,
+            ]);
+
+            return ['updated' => true, 'status' => $attributes['validation_status'], 'points' => $points];
+        });
+
+        if (! $result['updated']) {
+            if ($result['status'] === $attributes['validation_status']) {
+                return back()->with('success', 'Validasi laporan ini sudah tersimpan sebelumnya.');
+            }
+
+            return back()->withErrors(['validation_status' => 'Laporan ini sudah divalidasi dan tidak dapat diubah.']);
+        }
+
+        $message = $attributes['validation_status'] === 'valid'
+            ? "Laporan dinyatakan valid. {$result['points']} poin diberikan."
+            : 'Laporan ditandai sebagai duplikat; tidak ada poin yang diberikan.';
+
+        return back()->with('success', $message);
     }
 
     public function storeWorkday(Request $request): RedirectResponse

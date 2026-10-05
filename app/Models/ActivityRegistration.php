@@ -13,6 +13,7 @@ class ActivityRegistration extends Model
         'group_name',
         'members',
         'status',
+        'points_awarded',
     ];
 
     protected function casts(): array

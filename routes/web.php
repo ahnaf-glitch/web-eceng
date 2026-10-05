@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PortalController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('portal.dashboard') : redirect()->route('login');
@@ -38,6 +38,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::patch('/warga-peduli/{redemption}', [AdminController::class, 'updateRedemption'])->name('redemptions.update');
     Route::get('/warga', [AdminController::class, 'residents'])->name('residents.index');
     Route::patch('/warga/{user}', [AdminController::class, 'updateResident'])->name('residents.update');
+    Route::patch('/warga/{user}/peran', [AdminController::class, 'updateResidentRole'])->name('residents.role.update');
+    Route::patch('/laporan/{report}/validasi', [AdminController::class, 'validateReport'])->name('reports.validate');
     Route::get('/kegiatan-edukasi', [AdminController::class, 'activityRegistrations'])->name('activity-registrations.index');
     Route::patch('/kegiatan-edukasi/{activityRegistration}', [AdminController::class, 'updateActivityRegistration'])->name('activity-registrations.update');
 });

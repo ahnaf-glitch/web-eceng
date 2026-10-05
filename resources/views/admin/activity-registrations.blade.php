@@ -59,7 +59,7 @@
                                 @endif
                             </td>
                             <td>{{ $registration->created_at->translatedFormat('d M Y') }}</td>
-                            <td><span class="status-pill status-{{ $registration->status }}">{{ ucfirst($registration->status) }}</span></td>
+                            <td><span class="status-pill status-{{ $registration->status }}">{{ ucfirst($registration->status) }}</span>@if($registration->points_awarded > 0)<br><span class="report-by">{{ $registration->points_awarded }} poin diberikan</span>@endif</td>
                             <td>
                                 @if($registration->status === 'menunggu')
                                     <div class="resident-actions">

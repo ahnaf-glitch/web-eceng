@@ -48,8 +48,8 @@
                     @forelse($redemptions as $redemption)
                         <tr>
                             <td>{{ $redemption->user->name }}<br><span class="report-by">{{ $redemption->user->rt_rw }}</span></td>
-                            <td>{{ ucfirst($redemption->reward) }}@if($redemption->provider)<br><span class="report-by">{{ ['dana' => 'DANA', 'gopay' => 'GoPay', 'ovo' => 'OVO', 'shopeepay' => 'ShopeePay'][$redemption->provider] ?? ucfirst($redemption->provider) }}</span>@endif</td>
-                            <td>{{ $redemption->points }} poin<br><span class="report-by">Rp{{ number_format($redemption->points * 100, 0, ',', '.') }}</span></td>
+                            <td>{{ $redemption->rewardLabel() }}@if($redemption->provider)<br><span class="report-by">{{ ['dana' => 'DANA', 'gopay' => 'GoPay', 'ovo' => 'OVO', 'shopeepay' => 'ShopeePay'][$redemption->provider] ?? ucfirst($redemption->provider) }}</span>@endif</td>
+                            <td>{{ $redemption->points }} poin</td>
                             <td>{{ $redemption->destination }}</td>
                             <td>{{ $redemption->created_at->translatedFormat('d M Y') }}</td>
                             <td><span class="status-pill status-{{ $redemption->status }}">{{ ucfirst($redemption->status) }}</span></td>

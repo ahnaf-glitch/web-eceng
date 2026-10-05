@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Report;
-use App\Models\Redemption;
-use App\Models\User;
 use App\Models\ActivityRegistration;
+use App\Models\Redemption;
+use App\Models\Report;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +15,7 @@ class CommunityWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_and_report_submission_award_ten_points(): void
+    public function test_setor_report_awards_points_only_after_kelurahan_validates_it(): void
     {
         $this->post(route('register.store'), [
             'name' => 'Ayu Lestari',
@@ -40,16 +40,57 @@ class CommunityWorkflowTest extends TestCase
             'longitude' => '112.72',
             'density' => 'sedang',
             'description' => 'Eceng gondok menutup sebagian aliran.',
+            'deposit_weight' => 2,
         ])->assertRedirect(route('portal.reports.index'));
 
-        $this->assertDatabaseHas('users', ['email' => 'ayu@example.test', 'points' => 10]);
+        $this->assertDatabaseHas('users', ['email' => 'ayu@example.test', 'points' => 0]);
         $this->assertDatabaseHas('reports', [
             'location' => 'Kali Cempaka dekat jembatan',
             'latitude' => '-7.4500000',
             'longitude' => '112.7200000',
             'density' => 'sedang',
             'status' => 'baru',
+            'deposit_weight' => 2,
+            'validation_status' => 'menunggu',
         ]);
+
+        $report = Report::firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->patch(route('admin.reports.validate', $report), ['validation_status' => 'valid'])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Laporan dinyatakan valid. 20 poin diberikan.');
+
+        $this->assertDatabaseHas('users', ['email' => 'ayu@example.test', 'points' => 20]);
+        $this->assertDatabaseHas('reports', ['id' => $report->id, 'points_awarded' => 20]);
+    }
+
+    public function test_valid_report_without_setor_awards_four_points_and_duplicate_awards_none(): void
+    {
+        $resident = User::factory()->create(['points' => 0]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $report = Report::create([
+            'user_id' => $resident->id,
+            'location' => 'Kali Cempaka',
+            'density' => 'ringan',
+            'description' => 'Eceng gondok terlihat.',
+        ]);
+        $duplicate = Report::create([
+            'user_id' => $resident->id,
+            'location' => 'Kali Cempaka',
+            'density' => 'ringan',
+            'description' => 'Laporan lokasi yang sama.',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.reports.validate', $report), ['validation_status' => 'valid'])
+            ->assertRedirect();
+        $this->patch(route('admin.reports.validate', $duplicate), ['validation_status' => 'duplikat'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 4]);
+        $this->assertDatabaseHas('reports', ['id' => $report->id, 'points_awarded' => 4]);
+        $this->assertDatabaseHas('reports', ['id' => $duplicate->id, 'points_awarded' => 0]);
     }
 
     public function test_pending_resident_cannot_log_in_until_admin_approves_registration(): void
@@ -118,6 +159,63 @@ class CommunityWorkflowTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseHas('reports', ['id' => $report->id, 'status' => 'baru']);
+    }
+
+    public function test_kelurahan_can_assign_rt_rw_role_and_rt_rw_only_sees_its_region(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $resident = User::factory()->create(['rt_rw' => 'RT 02 / RW 04']);
+        $this->actingAs($admin)
+            ->patch(route('admin.residents.role.update', $resident), ['role' => 'rt_rw'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'role' => 'rt_rw']);
+        $resident->refresh();
+
+        $inRegionReporter = User::factory()->create(['rt_rw' => 'RT 02 / RW 04']);
+        $outsideReporter = User::factory()->create(['rt_rw' => 'RT 03 / RW 04']);
+        Report::create([
+            'user_id' => $inRegionReporter->id,
+            'rt_rw' => 'RT 02 / RW 04',
+            'location' => 'Sungai Wilayah Saya',
+            'density' => 'ringan',
+            'description' => 'Laporan di wilayah RT/RW ini.',
+        ]);
+        Report::create([
+            'user_id' => $outsideReporter->id,
+            'rt_rw' => 'RT 03 / RW 04',
+            'location' => 'Sungai Wilayah Lain',
+            'density' => 'ringan',
+            'description' => 'Laporan wilayah lain.',
+        ]);
+
+        $this->actingAs($resident)
+            ->get(route('portal.reports.index'))
+            ->assertOk()
+            ->assertSee('Sungai Wilayah Saya')
+            ->assertDontSee('Sungai Wilayah Lain');
+
+        $report = Report::where('location', 'Sungai Wilayah Saya')->firstOrFail();
+        $this->patch(route('admin.reports.validate', $report), ['validation_status' => 'valid'])
+            ->assertForbidden();
+        $this->get(route('portal.reports.create'))->assertForbidden();
+    }
+
+    public function test_only_kelurahan_can_assign_rt_rw_role_and_role_requires_a_region(): void
+    {
+        $resident = User::factory()->create(['rt_rw' => null]);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($resident)
+            ->patch(route('admin.residents.role.update', $resident), ['role' => 'rt_rw'])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->from(route('admin.residents.index'))
+            ->patch(route('admin.residents.role.update', $resident), ['role' => 'rt_rw'])
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'role' => 'warga']);
     }
 
     public function test_report_photo_is_saved_to_public_storage(): void
@@ -257,7 +355,31 @@ class CommunityWorkflowTest extends TestCase
         $this->assertDatabaseHas('activity_registrations', [
             'id' => $registration->id,
             'status' => 'disetujui',
+            'points_awarded' => 10,
         ]);
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 10]);
+    }
+
+    public function test_approved_group_education_awards_twenty_points_to_registrant_only(): void
+    {
+        $registrant = User::factory()->create(['points' => 0]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($registrant)->post(route('portal.education.register'), [
+            'activity' => 'biogas',
+            'group_name' => 'Kelompok Sungai Bersih',
+            'members' => [
+                ['name' => 'Ayu Lestari', 'rt_rw' => 'RT 02 / RW 04'],
+                ['name' => 'Budi Santoso', 'rt_rw' => 'RT 02 / RW 04'],
+            ],
+        ])->assertRedirect(route('portal.education'));
+
+        $registration = ActivityRegistration::firstOrFail();
+        $this->actingAs($admin)
+            ->patch(route('admin.activity-registrations.update', $registration), ['status' => 'disetujui'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $registrant->id, 'points' => 20]);
+        $this->assertDatabaseHas('activity_registrations', ['id' => $registration->id, 'points_awarded' => 20]);
     }
 
     public function test_biogas_registration_requires_a_group_name(): void
@@ -334,64 +456,47 @@ class CommunityWorkflowTest extends TestCase
         $this->assertDatabaseCount('reports', 0);
     }
 
-    public function test_redemption_deducts_points_and_records_request(): void
+    public function test_redemption_deducts_catalog_points_and_records_reward_request(): void
     {
-        $resident = User::factory()->create(['points' => 20]);
+        $resident = User::factory()->create(['points' => 200]);
 
         $this->actingAs($resident)
             ->post(route('portal.redeem'), [
-                'reward' => 'pulsa',
-                'points' => 10,
+                'reward' => 'voucher-umkm',
                 'destination' => '081234567890',
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 10]);
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 0]);
         $this->assertDatabaseHas('redemptions', [
             'user_id' => $resident->id,
-            'reward' => 'pulsa',
-            'points' => 10,
+            'reward' => 'voucher-umkm',
+            'points' => 200,
             'status' => 'menunggu',
         ]);
     }
 
-    public function test_ewallet_redemption_stores_selected_provider(): void
+    public function test_redemption_requires_exact_reward_catalog_item_and_point_threshold(): void
     {
-        $resident = User::factory()->create(['points' => 20]);
-
-        $this->actingAs($resident)
-            ->post(route('portal.redeem'), [
-                'reward' => 'e-wallet',
-                'provider' => 'gopay',
-                'points' => 10,
-                'destination' => '081234567890',
-            ])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('redemptions', [
-            'user_id' => $resident->id,
-            'reward' => 'e-wallet',
-            'provider' => 'gopay',
-            'destination' => '081234567890',
-        ]);
-        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 10]);
-    }
-
-    public function test_ewallet_redemption_requires_a_valid_provider(): void
-    {
-        $resident = User::factory()->create(['points' => 20]);
+        $resident = User::factory()->create(['points' => 49]);
 
         $this->actingAs($resident)
             ->from(route('portal.rewards'))
             ->post(route('portal.redeem'), [
-                'reward' => 'e-wallet',
-                'points' => 10,
+                'reward' => 'e-sertifikat',
                 'destination' => '081234567890',
             ])
-            ->assertSessionHasErrors('provider');
+            ->assertStatus(422);
 
         $this->assertDatabaseCount('redemptions', 0);
-        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 20]);
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 49]);
+
+        $this->post(route('portal.redeem'), [
+            'reward' => 'pulsa',
+            'destination' => '081234567890',
+        ])->assertSessionHasErrors('reward');
+
+        $this->assertDatabaseCount('redemptions', 0);
     }
 
     public function test_admin_can_process_a_resident_redemption(): void
@@ -400,7 +505,7 @@ class CommunityWorkflowTest extends TestCase
         $resident = User::factory()->create(['points' => 10]);
         $redemption = Redemption::create([
             'user_id' => $resident->id,
-            'reward' => 'pulsa',
+            'reward' => 'e-sertifikat',
             'points' => 10,
             'destination' => '081234567890',
         ]);
@@ -424,7 +529,7 @@ class CommunityWorkflowTest extends TestCase
         $resident = User::factory()->create(['points' => 5]);
         $redemption = Redemption::create([
             'user_id' => $resident->id,
-            'reward' => 'token listrik',
+            'reward' => 'e-sertifikat',
             'points' => 10,
             'destination' => '1234567890',
             'status' => 'diproses',
@@ -445,7 +550,7 @@ class CommunityWorkflowTest extends TestCase
         $resident = User::factory()->create();
         $redemption = Redemption::create([
             'user_id' => $resident->id,
-            'reward' => 'pulsa',
+            'reward' => 'e-sertifikat',
             'points' => 10,
             'destination' => '081234567890',
         ]);

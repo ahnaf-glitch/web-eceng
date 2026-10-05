@@ -8,9 +8,12 @@ Portal warga untuk melaporkan eceng gondok, memantau penanganan, mengikuti kerja
 - Laporan lokasi, kepadatan eceng gondok, keterangan, serta foto opsional.
 - Papan laporan dengan filter status dan kepadatan.
 - Peta interaktif wilayah Sidoarjo dengan pin yang dipilih saat membuat laporan, warna kepadatan, dan tautan titik ke Google Maps.
-- Dashboard admin untuk memperbarui status laporan.
+- Dashboard Kelurahan untuk memvalidasi laporan (valid/duplikat), menentukan status penanganan, dan mengelola warga serta kegiatan.
+- Akun RT/RW yang ditetapkan Kelurahan hanya dapat memantau laporan di wilayah RT/RW-nya.
 - Jadwal kerja bakti yang dibuat admin dan dapat dilihat warga.
-- Poin warga: 10 poin per laporan, setara Rp1.000, dengan pencatatan permintaan penukaran pulsa, token listrik, dan e-wallet (DANA, GoPay, OVO, ShopeePay).
+- Poin laporan: 4 poin untuk laporan valid tanpa setoran, atau 10 poin per kg eceng gondok yang disetor. Poin baru diberikan setelah validasi Kelurahan; laporan duplikat bernilai 0.
+- Poin edukasi: 10 poin untuk edukasi individu dan 20 poin untuk edukasi kelompok setelah pendaftaran disetujui Kelurahan; poin kelompok masuk ke akun pendaftar.
+- Tingkatan apresiasi: 50 poin untuk E-Sertifikat Kontributor, 100 untuk merchandise sederhana, 200 untuk voucher UMKM, 300 untuk produk kerajinan eceng gondok, 500 untuk voucher/insentif, dan 1.000 untuk Penghargaan Kontributor Lingkungan.
 - Admin dapat memfilter dan memproses penukaran poin; permintaan yang ditolak mengembalikan poin warga secara otomatis.
 - Halaman edukasi dampak, penanganan, dan pemanfaatan eceng gondok.
 
@@ -32,7 +35,7 @@ Portal warga untuk melaporkan eceng gondok, memantau penanganan, mengikuti kerja
 
 6. Buka `http://127.0.0.1:8000`.
 
-Foto laporan disimpan pada disk publik Laravel. Permintaan penukaran poin dicatat dengan status menunggu untuk ditindaklanjuti pengelola.
+Foto laporan disimpan pada disk publik Laravel. Permintaan apresiasi poin dicatat dengan status menunggu untuk ditindaklanjuti Kelurahan. Akun publik selalu menjadi warga; Kelurahan dapat menetapkan akun yang disetujui sebagai pengurus RT/RW melalui halaman pengelolaan warga.
 
 Peta menggunakan tile OpenStreetMap melalui Leaflet dan tidak memerlukan Google Maps API key. Titik laporan disimpan sebagai koordinat, dibatasi pada area peta Sidoarjo, dan dapat dibuka di Google Maps dari popup pin. Laporan lama tanpa koordinat tetap tampil pada daftar, tetapi belum memiliki pin peta.
 

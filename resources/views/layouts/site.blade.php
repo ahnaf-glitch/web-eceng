@@ -24,6 +24,10 @@
                 <a class="{{ request()->routeIs('portal.workdays') ? 'active' : '' }}" href="{{ route('portal.workdays') }}">Kerja bakti</a>
                 <a class="{{ request()->routeIs('admin.redemptions.*') ? 'active' : '' }}" href="{{ route('admin.redemptions.index') }}">Warga peduli</a>
                 <a class="{{ request()->routeIs('admin.activity-registrations.*') ? 'active' : '' }}" href="{{ route('admin.activity-registrations.index') }}">Pendaftaran kegiatan</a>
+            @elseif(auth()->user()->isRtRw())
+                <a class="{{ request()->routeIs('portal.dashboard') ? 'active' : '' }}" href="{{ route('portal.dashboard') }}">Wilayah saya</a>
+                <a class="{{ request()->routeIs('portal.reports.index') ? 'active' : '' }}" href="{{ route('portal.reports.index') }}">Pantau laporan</a>
+                <a class="{{ request()->routeIs('portal.workdays') ? 'active' : '' }}" href="{{ route('portal.workdays') }}">Kerja bakti</a>
             @else
                 <a class="{{ request()->routeIs('portal.dashboard') ? 'active' : '' }}" href="{{ route('portal.dashboard') }}">Beranda</a>
                 <a class="{{ request()->routeIs('portal.reports.create') ? 'active' : '' }}" href="{{ route('portal.reports.create') }}">Laporan</a>
@@ -35,7 +39,7 @@
         </nav>
         <div class="user-menu">
             <span class="user-avatar" aria-hidden="true"></span>
-            <span class="user-name">{{ auth()->user()->name }}<small>{{ auth()->user()->isAdmin() ? 'ADMINISTRATOR' : preg_replace('/^\s*(?:RT\s*)?(\d+)\s*\/\s*(?:RW\s*)?(\d+)\s*$/i', 'RT$1/RW$2', (string) auth()->user()->rt_rw) }}</small></span>
+            <span class="user-name">{{ auth()->user()->name }}<small>{{ auth()->user()->isAdmin() ? 'KELURAHAN' : (auth()->user()->isRtRw() ? 'PENGURUS RT/RW · '.preg_replace('/^\s*(?:RT\s*)?(\d+)\s*\/\s*(?:RW\s*)?(\d+)\s*$/i', 'RT$1/RW$2', (string) auth()->user()->rt_rw) : preg_replace('/^\s*(?:RT\s*)?(\d+)\s*\/\s*(?:RW\s*)?(\d+)\s*$/i', 'RT$1/RW$2', (string) auth()->user()->rt_rw)) }}</small></span>
             <form action="{{ route('logout') }}" method="POST">@csrf<button class="logout-button" type="submit">Keluar</button></form>
         </div>
     </header>

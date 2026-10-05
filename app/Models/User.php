@@ -65,4 +65,14 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function isRtRw(): bool
+    {
+        return $this->role === 'rt_rw';
+    }
+
+    public function isResident(): bool
+    {
+        return $this->role === 'warga';
+    }
 }
