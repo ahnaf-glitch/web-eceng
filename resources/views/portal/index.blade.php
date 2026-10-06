@@ -22,18 +22,13 @@
     @if($page === 'dashboard')
         <section class="dashboard-hero">
             <div class="hero-copy">
-                <span class="eyebrow eyebrow-light"><span class="live-dot"></span> RAWAT SUNGAI, RAWAT MASA DEPAN</span>
+                <span class="eyebrow eyebrow-light">RAWAT SUNGAI, RAWAT MASA DEPAN</span>
                 <h1>Halo, {{ explode(' ', auth()->user()->name)[0] }}.<br>Yuk jaga sungai <em>kita.</em></h1>
                 <p>Satu laporan kecil bisa menggerakkan satu lingkungan. Pantau kondisi sungai dan ikut aksi nyata bersama warga.</p>
                 @unless(auth()->user()->isRtRw() || auth()->user()->isAdmin())
                     <a class="button button-primary" href="{{ route('portal.reports.create') }}">Laporkan eceng gondok</a>
                 @endunless
             </div>
-        </section>
-        <section class="stats-row" aria-label="Ringkasan kondisi lingkungan">
-            <div class="stat"><span><strong>{{ $reportCount }}</strong><span>Laporan warga</span></span></div>
-            <div class="stat"><span><strong>{{ $resolvedCount }}</strong><span>Laporan ditangani</span></span></div>
-            <div class="stat"><span><strong>{{ auth()->user()->points }}</strong><span>Poin yang tersedia</span></span></div>
         </section>
         <div class="dashboard-columns">
             <section>

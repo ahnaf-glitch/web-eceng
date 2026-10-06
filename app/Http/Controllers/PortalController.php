@@ -27,8 +27,6 @@ class PortalController extends Controller
             'myReports' => $user->isRtRw()
                 ? (clone $reportsInScope)->with('user')->latest()->take(3)->get()
                 : $user->reports()->latest()->take(3)->get(),
-            'reportCount' => (clone $reportsInScope)->count(),
-            'resolvedCount' => (clone $reportsInScope)->where('status', 'selesai')->count(),
             'upcomingWorkday' => Workday::where('starts_at', '>=', now())->orderBy('starts_at')->first(),
         ]);
     }
