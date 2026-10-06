@@ -463,7 +463,7 @@ class CommunityWorkflowTest extends TestCase
         $this->actingAs($resident)
             ->post(route('portal.redeem'), [
                 'reward' => 'voucher-umkm',
-                'destination' => '081234567890',
+                'phone' => '081234567890',
             ])
             ->assertRedirect();
 
@@ -471,6 +471,7 @@ class CommunityWorkflowTest extends TestCase
         $this->assertDatabaseHas('redemptions', [
             'user_id' => $resident->id,
             'reward' => 'voucher-umkm',
+            'phone' => '081234567890',
             'points' => 200,
             'status' => 'menunggu',
         ]);
@@ -481,10 +482,15 @@ class CommunityWorkflowTest extends TestCase
         $resident = User::factory()->create(['points' => 49]);
 
         $this->actingAs($resident)
+            ->get(route('portal.rewards'))
+            ->assertOk()
+            ->assertDontSee('1000 poin');
+
+        $this->actingAs($resident)
             ->from(route('portal.rewards'))
             ->post(route('portal.redeem'), [
                 'reward' => 'e-sertifikat',
-                'destination' => '081234567890',
+                'phone' => '081234567890',
             ])
             ->assertStatus(422);
 
@@ -493,8 +499,18 @@ class CommunityWorkflowTest extends TestCase
 
         $this->post(route('portal.redeem'), [
             'reward' => 'pulsa',
-            'destination' => '081234567890',
+            'phone' => '081234567890',
         ])->assertSessionHasErrors('reward');
+
+        $this->post(route('portal.redeem'), [
+            'reward' => 'penghargaan',
+            'phone' => '081234567890',
+        ])->assertSessionHasErrors('reward');
+
+        $this->post(route('portal.redeem'), [
+            'reward' => 'e-sertifikat',
+            'phone' => 'alamat rumah warga',
+        ])->assertSessionHasErrors('phone');
 
         $this->assertDatabaseCount('redemptions', 0);
     }
@@ -507,20 +523,27 @@ class CommunityWorkflowTest extends TestCase
             'user_id' => $resident->id,
             'reward' => 'e-sertifikat',
             'points' => 10,
-            'destination' => '081234567890',
+            'phone' => '081234567890',
         ]);
 
         $this->actingAs($admin)
             ->get(route('admin.redemptions.index'))
             ->assertOk()
             ->assertSee($resident->name)
-            ->assertSee('081234567890');
+            ->assertSee('081234567890')
+            ->assertSee('https://wa.me/6281234567890?text=', false)
+            ->assertSee('value="selesai"', false);
 
         $this->patch(route('admin.redemptions.update', $redemption), ['status' => 'diproses'])
             ->assertRedirect();
 
         $this->assertDatabaseHas('redemptions', ['id' => $redemption->id, 'status' => 'diproses']);
         $this->assertDatabaseHas('users', ['id' => $resident->id, 'points' => 10]);
+
+        $this->patch(route('admin.redemptions.update', $redemption), ['status' => 'selesai'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('redemptions', ['id' => $redemption->id, 'status' => 'selesai']);
     }
 
     public function test_rejected_redemption_refunds_points_only_once(): void
@@ -531,7 +554,7 @@ class CommunityWorkflowTest extends TestCase
             'user_id' => $resident->id,
             'reward' => 'e-sertifikat',
             'points' => 10,
-            'destination' => '1234567890',
+            'phone' => '081234567890',
             'status' => 'diproses',
         ]);
 
@@ -552,7 +575,7 @@ class CommunityWorkflowTest extends TestCase
             'user_id' => $resident->id,
             'reward' => 'e-sertifikat',
             'points' => 10,
-            'destination' => '081234567890',
+            'phone' => '081234567890',
         ]);
 
         $this->actingAs($resident)

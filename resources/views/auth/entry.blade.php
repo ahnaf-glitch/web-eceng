@@ -17,7 +17,7 @@
                 <span class="brand-mark" aria-hidden="true"></span><span>rawa<span class="brand-light">rukun</span><small>RAWAT SUNGAI BERSAMA</small></span>
             </a>
             <div class="story-copy">
-                <span class="eyebrow eyebrow-light"><span class="live-dot"></span> GERAKAN WARGA, DAMPAK NYATA</span>
+                <span class="eyebrow eyebrow-light">GERAKAN WARGA, DAMPAK NYATA</span>
                 <h1>Sungai bersih<br>dimulai dari <em>kita.</em></h1>
                 <p>Laporkan eceng gondok, ikut kerja bakti, dan jaga aliran sungai tetap hidup bersama tetangga.</p>
             </div>

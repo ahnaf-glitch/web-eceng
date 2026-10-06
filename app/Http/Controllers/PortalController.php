@@ -129,7 +129,18 @@ class PortalController extends Controller
 
         $attributes = $request->validate([
             'reward' => ['required', Rule::in(array_keys(Redemption::REWARDS))],
-            'destination' => ['required', 'string', 'max:100'],
+            'phone' => [
+                'required',
+                'string',
+                'max:25',
+                'regex:/^(?:\+?62|0)?8[0-9\s().-]{7,18}$/',
+                function (string $attribute, string $value, \Closure $fail): void {
+                    $digits = preg_replace('/\D+/', '', $value);
+                    if (! is_string($digits) || strlen($digits) < 8 || strlen($digits) > 15) {
+                        $fail('Nomor HP harus terdiri dari 8 sampai 15 angka.');
+                    }
+                },
+            ],
         ]);
         $reward = Redemption::REWARDS[$attributes['reward']];
 

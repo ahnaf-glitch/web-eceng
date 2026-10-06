@@ -42,7 +42,7 @@
         <div class="table-scroll">
             <table class="table redemption-table">
                 <thead>
-                    <tr><th>Warga</th><th>Hadiah</th><th>Nilai</th><th>Tujuan</th><th>Diajukan</th><th>Status</th><th>Tindakan</th></tr>
+                    <tr><th>Warga</th><th>Hadiah</th><th>Nilai</th><th>No. HP</th><th>Diajukan</th><th>Status</th><th>Tindakan</th></tr>
                 </thead>
                 <tbody>
                     @forelse($redemptions as $redemption)
@@ -50,7 +50,13 @@
                             <td>{{ $redemption->user->name }}<br><span class="report-by">{{ $redemption->user->rt_rw }}</span></td>
                             <td>{{ $redemption->rewardLabel() }}@if($redemption->provider)<br><span class="report-by">{{ ['dana' => 'DANA', 'gopay' => 'GoPay', 'ovo' => 'OVO', 'shopeepay' => 'ShopeePay'][$redemption->provider] ?? ucfirst($redemption->provider) }}</span>@endif</td>
                             <td>{{ $redemption->points }} poin</td>
-                            <td>{{ $redemption->destination }}</td>
+                            <td>
+                                @if($redemption->whatsappUrl())
+                                    <span class="report-by">{{ $redemption->phone }}</span>
+                                @else
+                                    {{ $redemption->phone }}
+                                @endif
+                            </td>
                             <td>{{ $redemption->created_at->translatedFormat('d M Y') }}</td>
                             <td><span class="status-pill status-{{ $redemption->status }}">{{ ucfirst($redemption->status) }}</span></td>
                             <td>
@@ -66,6 +72,9 @@
                                             <option value="ditolak">Tolak + kembalikan poin</option>
                                         </select>
                                         <button class="button button-secondary" type="submit">Simpan</button>
+                                        @if($redemption->whatsappUrl())
+                                            <a class="button button-outline" href="{{ $redemption->whatsappUrl() }}" target="_blank" rel="noopener noreferrer" aria-label="Chat WhatsApp dengan {{ $redemption->user->name }} tentang penyerahan hadiah">Chat WA</a>
+                                        @endif
                                     </form>
                                 @else
                                     <span class="field-help">Sudah ditutup</span>
@@ -81,5 +90,5 @@
         <div class="pagination-wrap">{{ $redemptions->links() }}</div>
     </section>
 
-    <p class="redemption-note">Saat permintaan ditolak, poin dikembalikan ke saldo warga secara otomatis. Permintaan yang selesai atau ditolak tidak dapat diubah lagi.</p>
+    <p class="redemption-note">Gunakan tombol Chat WA untuk membuka pesan pengambilan hadiah di WhatsApp, lalu kirim pesannya. Ubah status menjadi diproses atau selesai sesuai tindak lanjut. Saat permintaan ditolak, poin dikembalikan ke saldo warga secara otomatis.</p>
 @endsection

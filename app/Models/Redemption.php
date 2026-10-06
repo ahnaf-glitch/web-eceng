@@ -13,14 +13,34 @@ class Redemption extends Model
         'voucher-umkm' => ['label' => 'Voucher produk UMKM', 'points' => 200],
         'kerajinan-eceng-gondok' => ['label' => 'Produk kerajinan eceng gondok', 'points' => 300],
         'insentif' => ['label' => 'Voucher/insentif tertentu', 'points' => 500],
-        'penghargaan' => ['label' => 'Penghargaan Kontributor Lingkungan', 'points' => 1000],
     ];
 
-    protected $fillable = ['user_id', 'reward', 'provider', 'points', 'destination', 'status'];
+    protected $fillable = ['user_id', 'reward', 'provider', 'points', 'phone', 'status'];
 
     public function rewardLabel(): string
     {
         return self::REWARDS[$this->reward]['label'] ?? ucfirst($this->reward);
+    }
+
+    public function whatsappUrl(): ?string
+    {
+        $phone = preg_replace('/[\s().-]+/', '', $this->phone);
+        if (! is_string($phone) || ! preg_match('/^(?:\+?62|0)?8\d{7,12}$/', $phone)) {
+            return null;
+        }
+
+        $phone = preg_replace('/\D+/', '', $phone);
+        if (str_starts_with($phone, '0')) {
+            $phone = '62'.substr($phone, 1);
+        } elseif (str_starts_with($phone, '8')) {
+            $phone = '62'.$phone;
+        } elseif (! str_starts_with($phone, '62')) {
+            return null;
+        }
+
+        $message = "Halo {$this->user->name}, hadiah {$this->rewardLabel()} dari program Warga Peduli sudah siap diambil. Silakan datang ke kantor Kelurahan untuk mengambilnya. Terima kasih.";
+
+        return 'https://wa.me/'.$phone.'?text='.rawurlencode($message);
     }
 
     public function user(): BelongsTo
