@@ -190,7 +190,14 @@ class CommunityWorkflowTest extends TestCase
         ]);
 
         $this->actingAs($resident)
-            ->get(route('portal.reports.index'))
+            ->get(route('portal.dashboard'))
+            ->assertOk()
+            ->assertSee('Papan laporan warga')
+            ->assertDontSee('Laporan terbarumu')
+            ->assertSee('Sungai Wilayah Saya')
+            ->assertDontSee('Sungai Wilayah Lain');
+
+        $this->get(route('portal.reports.index'))
             ->assertOk()
             ->assertSee('Sungai Wilayah Saya')
             ->assertDontSee('Sungai Wilayah Lain');
@@ -292,6 +299,34 @@ class CommunityWorkflowTest extends TestCase
             ->assertSee('RT1/RW1')
             ->assertSee('>Keluar</button>', false)
             ->assertDontSee('POIN PEDULI');
+    }
+
+    public function test_resident_can_enter_numeric_rt_rw_and_profile_displays_labels_automatically(): void
+    {
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('Contoh: 1/2')
+            ->assertSee('RT/RW akan ditampilkan otomatis di profil.');
+
+        $this->post(route('register.store'), [
+            'name' => 'Citra Wulandari',
+            'rt_rw' => '1/2',
+            'email' => 'citra@example.test',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+        ])->assertRedirect(route('login'));
+
+        $resident = User::where('email', 'citra@example.test')->firstOrFail();
+        $this->assertDatabaseHas('users', ['id' => $resident->id, 'rt_rw' => '1/2']);
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->patch(route('admin.residents.update', $resident), ['registration_status' => 'disetujui'])
+            ->assertRedirect();
+
+        $this->actingAs($resident)
+            ->get(route('portal.dashboard'))
+            ->assertOk()
+            ->assertSee('RT1/RW2');
     }
 
     public function test_education_page_shows_individual_crafts_and_community_biogas_paths(): void

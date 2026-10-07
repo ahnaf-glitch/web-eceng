@@ -36,7 +36,7 @@
                     @csrf
                     @if($mode === 'register')
                         <label>Nama lengkap<input name="name" value="{{ old('name') }}" autocomplete="name" placeholder="Nama sesuai identitas" required></label>
-                        <label>RT / RW<input name="rt_rw" value="{{ old('rt_rw') }}" placeholder="Contoh: RT 1 / RW 1" required></label>
+                        <label>RT / RW<input name="rt_rw" value="{{ old('rt_rw') }}" placeholder="Contoh: 1/2" required><span class="field-help">Cukup isi nomor, misalnya 1/2. RT/RW akan ditampilkan otomatis di profil.</span></label>
                     @endif
                     <label>Email<input type="email" name="email" value="{{ old('email') }}" autocomplete="email" placeholder="nama@email.com" required></label>
                     <label>Kata sandi<input type="password" name="password" autocomplete="{{ $mode === 'register' ? 'new-password' : 'current-password' }}" placeholder="{{ $mode === 'register' ? 'Minimal 8 karakter' : 'Masukkan kata sandi' }}" required></label>

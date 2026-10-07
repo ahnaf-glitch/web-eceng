@@ -32,7 +32,7 @@
         </section>
         <div class="dashboard-columns">
             <section>
-                <div class="section-title"><h2>Laporan terbarumu</h2><a class="text-link" href="{{ route('portal.reports.index') }}">Lihat papan</a></div>
+                <div class="section-title"><h2>{{ auth()->user()->isRtRw() ? 'Papan laporan warga' : 'Laporan terbarumu' }}</h2><a class="text-link" href="{{ route('portal.reports.index') }}">Lihat papan</a></div>
                 <div class="report-mini-list">
                     @forelse($myReports as $report)
                         <div class="report-mini"><div><strong>{{ $report->location }}</strong><span>{{ $report->created_at->translatedFormat('d M Y') }} · Kepadatan {{ $report->density }}</span></div><span class="status-pill status-{{ $report->status }}">{{ ucfirst($report->status) }}</span></div>
